@@ -1,6 +1,14 @@
 [![wercker status](https://app.wercker.com/status/29e2680051ff67ae42ba70e72a45891a/s/master "wercker status")](https://app.wercker.com/project/byKey/29e2680051ff67ae42ba70e72a45891a)
 
-# Final-Project
+# Final-Project<br/>
+
+ Team Info
+
+* Han, Bin - bh193 - BeanHam
+* Klus, Jonathan - jkk31 - jonklus
+* Zhang, Jingyi - jz139 - rebeccazjy425
+
+
 
 
 You should have a repo called Final_Project_Team_X where the X is your team number or name. Click on the repo's name and then Click on Clone or Download. Copy the URL for the repo for the next step.
