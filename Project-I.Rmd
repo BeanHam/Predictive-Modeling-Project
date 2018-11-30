@@ -30,6 +30,13 @@ In your write up your code should be hidden (`echo = FALSE`) so that your docume
 see Due dates in Sakai/Calendar for submissions
 
 ### Read in Training Data
+```{r}
+library(knitr)
+library(dplyr)
+library(ggplot2)
+library(GGally)
+```
+
 
 To get started read in the training data:
 ```{r read-data, echo=TRUE}
@@ -45,6 +52,74 @@ The Code Book is in the file `paris_paintings.md` provides more information abou
 
 Using EDA and any numerical summaries get to know the data -  identify what you might consider the 10 best variables for predicting `logprice` using scatterplots with other variables represented using colors or symbols, scatterplot matrices or conditioning plots.  
 
+```{r, fig.width=3, fig.height=5}
+t(summary(paintings_train))
+
+## create ggpair plots
+paintings_train_1 <- paintings_train %>% 
+  select(logprice, position, school_pntg, artistliving, endbuyer, Surface, Shape,
+         paired, finished, lrgfont)
+
+p = ggpairs(paintings_train_1, columns = c(1:10), 
+            progress = FALSE, 
+            title = "Title", cardinality_threshold = 60) +
+  theme_bw(base_size = 10) + 
+  theme(axis.text = element_text(size = 6))
+
+plots = lapply(1:p$nrow, function(i) getPlot(p, i = i, j = 1)) 
+
+ggmatrix(
+    plots[2:3],
+    nrow = 2,
+    ncol = 1,
+    xAxisLabels = "logprice" ,
+    yAxisLabels = p$yAxisLabels[2:3]
+)
+# Source: https://stackoverflow.com/questions/28652380/printing-a-single-row-from-a-ggpairs-plot
+
+ggmatrix(
+    plots[4:5],
+    nrow = 2,
+    ncol = 1,
+    xAxisLabels = "logprice" ,
+    yAxisLabels = p$yAxisLabels[4:5]
+)
+
+ggmatrix(
+    plots[6:7],
+    nrow = 2,
+    ncol = 1,
+    xAxisLabels = "logprice" ,
+    yAxisLabels = p$yAxisLabels[6:7]
+)
+
+ggmatrix(
+    plots[8:10],
+    nrow = 3,
+    ncol = 1,
+    xAxisLabels = "logprice" ,
+    yAxisLabels = p$yAxisLabels[8:10]
+)
+# Source: https://stackoverflow.com/questions/28652380/printing-a-single-row-from-a-ggpairs-plot
+```
+\bftext
+From the scatter plots of logprice with respect to those chosen ten variables, we decided to include variables $position$, $school_pntg$, $endbuyer$, and $surface$. The reason is that for continuous variables (such as $Surface$), there is a roughly linear positive relationship displayed. For categorical variables, the response variable $logprice$ show different levels given different categories, indicating that different categories do have impacts on the price.
+
+Repeat the same step for the rest variables (except for those that are obviously helpless, such as description, authorname etc.), we further picked up variables $origin_author$, $dealer$, $origin_cat$, $nfigures$, $figures, $and $prevcoll$.
+
+
+```{r, eval=FALSE}
+paintings_train_1 <- paintings_train %>% 
+  select(logprice, origin_author, dealer, origin_cat, authorstyle, Interm, type_intermed,
+         nfigures, engraved, original)
+
+paintings_train_1 <- paintings_train %>% 
+  select(logprice, prevcoll, othartist, figures, relig, landsALL, lands_sc, lands_elem,
+         lands_figs, lands_ment, arch, mytho, peasant, othgenre, singlefig, portrait,
+         still_life, discauth, history, allegory, pastorale)
+```
+
+
 ### Build your first model
 
 In the first model predict the auction price `price` using the transformation `logprice` using at least 10 and up to 20 predictors and any interactions to build a model using linear regression.  You may use stepwise model selection to simplify the model using AIC and/or BIC.  For reference, we will fit the null model to initialize the leaderboard, but replace model1 with your recommended model.
@@ -52,6 +127,8 @@ In the first model predict the auction price `price` using the transformation `l
 
 ```{r model1, echo=TRUE}
 model1 = lm(logprice ~ 1, data=paintings_train)
+
+model
 ```
 
 
