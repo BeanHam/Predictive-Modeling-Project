@@ -30,7 +30,7 @@ In your write up your code should be hidden (`echo = FALSE`) so that your docume
 see Due dates in Sakai/Calendar for submissions
 
 ### Read in Training Data
-```{r}
+```{r message=FALSE, warning=FALSE}
 library(knitr)
 library(dplyr)
 library(ggplot2)
@@ -103,39 +103,111 @@ ggmatrix(
 # Source: https://stackoverflow.com/questions/28652380/printing-a-single-row-from-a-ggpairs-plot
 ```
 \bftext
-From the scatter plots of logprice with respect to those chosen ten variables, we decided to include variables $position$, $school_pntg$, $endbuyer$, and $surface$. The reason is that for continuous variables (such as $Surface$), there is a roughly linear positive relationship displayed. For categorical variables, the response variable $logprice$ show different levels given different categories, indicating that different categories do have impacts on the price.
+From the scatter plots of logprice with respect to those chosen ten variables, we decided to include variables $position$, $school_pntg$, $endbuyer$, and $Surface$. The reason is that for continuous variables (such as $Surface$), there is a roughly linear positive relationship displayed. For categorical variables, the response variable $logprice$ show different levels given different categories, indicating that different categories do have impacts on the price.
 
 Repeat the same step for the rest variables (except for those that are obviously helpless, such as description, authorname etc.), we further picked up variables $origin_author$, $dealer$, $origin_cat$, $nfigures$, $figures, $and $prevcoll$.
 
 
 ```{r, eval=FALSE}
-paintings_train_1 <- paintings_train %>% 
-  select(logprice, origin_author, dealer, origin_cat, authorstyle, Interm, type_intermed,
-         nfigures, engraved, original)
+## mat test
+mat_count = 
+  paintings_train %>%
+  group_by(mat) %>% 
+  summarise(sum = n()) %>% 
+  filter(sum >= 10,
+         mat != "",
+         mat != "n/a")
 
-paintings_train_1 <- paintings_train %>% 
-  select(logprice, prevcoll, othartist, figures, relig, landsALL, lands_sc, lands_elem,
-         lands_figs, lands_ment, arch, mytho, peasant, othgenre, singlefig, portrait,
-         still_life, discauth, history, allegory, pastorale)
+mat_test = 
+  paintings_train %>% 
+  select(logprice, mat) %>% 
+  filter(mat %in% count$mat)
+
+p = ggpairs(mat_test, columns = c(1:2), 
+            progress = FALSE, 
+            title = "Title", cardinality_threshold = 60) +
+  theme_bw(base_size = 10) + 
+  theme(axis.text = element_text(size = 6))
+
+p
 ```
 
+\bftext
+The variables $mat$ is intuitively important in determining the price. However, since it contains too many levels, making it almost impossible to generate a bar graph comparing all the levels at the same time, we filtered out $mat$ with less than 10 total observations. It is beneficial also because small sample sizes will make our estimates have large variance in the final model. 
+
+By looking at the box plots, for different supporting materials there are slightly differences in the price (at least for "p" supporting material). Therefore, we consider adding $mat$ into the model (with the filter) and whether it is significant in determing the price.  
 
 ### Build your first model
 
 In the first model predict the auction price `price` using the transformation `logprice` using at least 10 and up to 20 predictors and any interactions to build a model using linear regression.  You may use stepwise model selection to simplify the model using AIC and/or BIC.  For reference, we will fit the null model to initialize the leaderboard, but replace model1 with your recommended model.
 
+## RMSE function
+```{r}
+rmse = function(obs, pred) { sqrt(sum((obs - pred)^2, na.rm = TRUE)/length(obs))}
+```
 
-```{r model1, echo=TRUE}
-model1 = lm(logprice ~ 1, data=paintings_train)
+## first round
+```{r model1, echo=TRUE, cache=TRUE}
 
-model
+paintings_train_2 = paintings_train %>% 
+  select(logprice, 
+         position, 
+         school_pntg, 
+         endbuyer,
+         Surface,
+         origin_author,
+         dealer,
+         origin_cat,
+         nfigures,
+         figures,
+         prevcoll,
+         mat) %>% 
+  filter(mat %in% mat_count$mat,
+         origin_cat != "S")
+  
+##model1 = lm(logprice ~ 1, data=paintings_train_2)
+ols = lm(logprice ~ (.)^2, data=paintings_train_2)
+
+## AIC
+AIC.ols <- step(ols, k = 2)
+summary(AIC.ols)
+
+```
+
+\bftext
+After the first round AIC testing, we get rid of several variables, including $school_pntg$, $endbuyer$, $origin_cat$, and $figures$. They are not significant at their base level. In addition, almost all the iteractions involved them are not significant or are NAs. 
+
+## second round
+```{r}
+
+paintings_train_2  = paintings_train %>% 
+  select(logprice, 
+         position, 
+         Surface,
+         origin_author,
+         dealer,
+         nfigures,
+         prevcoll,
+         mat) %>% 
+  filter(mat %in% mat_count$mat)
+  
+##model1 = lm(logprice ~ 1, data=paintings_train_2)
+ols = lm(logprice ~ (.)^2, data=paintings_train_2)
+
+## AIC
+AIC.ols <- step(ols, k = 2)
+summary(AIC.ols)
+
+paintings_test2 = paintings_test %>% 
+  filter(mat %in% paintings_train_2$mat)
+
 ```
 
 
 Save predictions and intervals.  
 ```{r predict-model1, echo=FALSE}
 predictions = as.data.frame(
-  exp(predict(model1, newdata=paintings_test, 
+  exp(predict(AIC.ols, newdata=paintings_test2, 
               interval = "pred")))
 save(predictions, file="predict-test.Rdata")
 ```
