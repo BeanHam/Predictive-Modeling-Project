@@ -97,10 +97,10 @@ paintings_train_2 = paintings_train_1 %>%
     allegory = as.factor(allegory),
     pastorale = as.factor(pastorale),
     finished = as.factor(finished)
-  ) %>% 
-  .[,c(8, 1:7, 9:45)]
+  ) %>%  
+  .[,c(8, 1:7, 9:39)]
 
-str(paintings_train_2)
+#str(paintings_train_2)
 
 #paintings_train_1 %>% 
 #  group_by(Shape) %>% 
@@ -119,78 +119,9 @@ str(paintings_train_2)
 ## Package Data Cleaning
 ```{r}
 
-test = paintings_train_1 %>% 
-  mutate(
-    authorstyle = ifelse(authorstyle == "n/a", 0, 1) %>% as.factor(.),
-    winningbiddertype = ifelse(winningbiddertype == "", NA, winningbiddertype),
-    endbuyer = ifelse(endbuyer == "", NA, endbuyer),
-    type_intermed = ifelse(type_intermed == "", NA, type_intermed),
-    
-    material = ifelse(material %in% c("n/a", "", "-"), NA, material),
-    mat = ifelse(mat %in% c("n/a", ""), NA, mat),
-    materialCat = ifelse(materialCat == "", NA, materialCat),
-    Shape = ifelse(Shape == "", NA, Shape),
-    
-    Interm = as.factor(Interm),
-    artistliving = as.factor(artistliving),
-    diff_origin = as.factor(diff_origin),
-    nfigures = as.factor(nfigures),
-    engraved = as.factor(engraved),
-    original = as.factor(original),
-    prevcoll = as.factor(prevcoll),
-    othartist = as.factor(othartist),
-    paired = as.factor(paired),
-    figures = as.factor(figures),
-    lrgfont = as.factor(lrgfont),
-    relig = as.factor(relig),
-    landsALL = as.factor(landsALL),
-    lands_sc = as.factor(lands_sc),
-    lands_elem= as.factor(lands_elem),
-    lands_figs = as.factor(lands_figs),
-    lands_ment = as.factor(lands_ment),
-    arch = as.factor(arch),
-    mytho = as.factor(mytho),
-    peasant = as.factor(peasant),
-    othgenre = as.factor(othgenre),
-    singlefig = as.factor(singlefig),
-    portrait = as.factor(portrait),
-    still_life = as.factor(still_life),
-    discauth = as.factor(discauth),
-    history = as.factor(history),
-    allegory = as.factor(allegory),
-    pastorale = as.factor(pastorale),
-    finished = as.factor(finished)
-  ) %>% 
-  select(-Height_in,
-         -Width_in,
-         -Surface_Rect,
-         -Diam_in,
-         -Surface_Rnd)
-
-
-
-## impute missing values
-misscol = test %>% 
-  select(Surface, 
-         winningbiddertype, 
-         endbuyer, 
-         Interm, 
-         type_intermed, 
-         Shape, 
-         material, 
-         mat, 
-         materialCat)
-
-misscol %>% 
-  group_by(endbuyer) %>% 
-  summarise(n())
-
 output = mice::mice(test)
 
 a <- mice::complete(output)
-
-m <- data.frame(cbind(a$Surface, test = test$Surface)) %>% 
-  filter(is.na(test))
 
 ```
 
@@ -302,7 +233,7 @@ ggmatrix(
 
 ## create ggpair plots
 
-p = ggpairs(paintings_train_2, columns = c(1,20:45), 
+p = ggpairs(paintings_train_2, columns = c(1,20:39), 
             progress = FALSE, 
             title = "Title", cardinality_threshold = 60) +
   theme_bw(base_size = 10) + 
