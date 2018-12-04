@@ -1,0 +1,524 @@
+---
+title: "Final Data Analysis Project"
+date:  "See Parts for Write-Up due Dates"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+### Read in Training Data
+```{r message=FALSE, warning=FALSE, echo =FALSE}
+library(knitr)
+library(dplyr)
+library(ggplot2)
+library(GGally)
+library(mice)
+```
+
+
+To get started read in the training data:
+```{r read-data, echo=TRUE}
+load("paintings_train.Rdata")
+load("paintings_test.Rdata")
+```
+
+
+## Manually Data Cleaning
+```{r}
+## Remove Intuitively Useless Variables
+paintings_train_1 = paintings_train %>% 
+  select(-sale,
+         -price,
+         -count,
+         -subject,
+         -authorstandard,
+         -author,
+         -winningbidder,
+         -other,
+         -Height_in,
+         -Width_in,
+         -Surface_Rect,
+         -Diam_in,
+         -Surface_Rnd,
+         -material,
+         -mat,
+         -lands_sc,
+         -lands_elem,
+         -lands_figs,
+         -lands_ment,
+         -lot)
+
+
+## Change variable types $ impute missing values
+paintings_train_2 = paintings_train_1 %>% 
+  mutate(
+    authorstyle = ifelse(authorstyle == "n/a", 0, 1) %>% as.factor(.),
+    winningbiddertype = ifelse(winningbiddertype == "", "X", winningbiddertype),
+    endbuyer = ifelse(endbuyer == "", "X", endbuyer),
+    #Interm = ifelse(is.na(Interm), "X", Interm), ## use mice to impute
+    type_intermed = ifelse(type_intermed == "", "X", type_intermed),
+    materialCat = ifelse(materialCat == "", "other", materialCat),
+    Shape = ifelse(Shape %in% c("round", "roude"), "round",
+                   ifelse(Shape %in% c("oval", "ovale"), "oval",
+                          ifelse(Shape == "squ_rect", "squ_rect", "other"))),
+    
+    #lot = as.numeric(lot),
+    #lot = ifelse(is.na(lot), 5, 
+    #             ifelse((1 <= lot & lot <= 20), 1, 
+    #                    ifelse((21 <= lot & lot <= 50), 2, 
+    #                           ifelse((51 <= lot & lot <= 100), 3, 
+    #                                  ifelse((101 <= lot & lot <= 200), 4, 
+    #                                         ifelse(is.na(lot), 5, 5)))))) %>% as.factor(.),
+    
+    ##Surface = ifelse(!is.na(Surface), Surface, rnorm(1, median(Surface, na.rm = TRUE), 2)), ## use mice to impute
+    
+    artistliving = as.factor(artistliving),
+    diff_origin = as.factor(diff_origin),
+    engraved = as.factor(engraved),
+    original = as.factor(original),
+    prevcoll = as.factor(prevcoll),
+    othartist = as.factor(othartist),
+    paired = as.factor(paired),
+    figures = as.factor(figures),
+    lrgfont = as.factor(lrgfont),
+    relig = as.factor(relig),
+    landsALL = as.factor(landsALL),
+    arch = as.factor(arch),
+    mytho = as.factor(mytho),
+    peasant = as.factor(peasant),
+    othgenre = as.factor(othgenre),
+    singlefig = as.factor(singlefig),
+    portrait = as.factor(portrait),
+    still_life = as.factor(still_life),
+    discauth = as.factor(discauth),
+    history = as.factor(history),
+    allegory = as.factor(allegory),
+    pastorale = as.factor(pastorale),
+    finished = as.factor(finished)
+  ) %>%  
+  .[,c(8, 1:7, 9:39)]
+
+#str(paintings_train_2)
+
+#paintings_train_1 %>% 
+#  group_by(Shape) %>% 
+#  summarise(sum = n()) %>% 
+#  arrange(desc(sum))
+  
+
+```
+
+1. Grouped "lot"
+2. Missing value (space + n/a) all coded as "X"
+3. For categorical variables, levels with few observations (smaller than 10) are combines into a single level.
+4. For numeric variable (Shape only here), imputed missing values from a normal distribution centered at the median of the variable, with some small variance.
+
+
+## Package Data Cleaning
+```{r}
+
+output = mice::mice(test)
+
+a <- mice::complete(output)
+
+```
+
+
+
+
+## Part I: Simple Model 
+
+### EDA
+
+Using EDA and any numerical summaries get to know the data -  identify what you might consider the 10 best variables for predicting `logprice` using scatterplots with other variables represented using colors or symbols, scatterplot matrices or conditioning plots.  
+
+## First round of test
+```{r, fig.width=3, fig.height=5}
+
+## create ggpair plots
+
+p = ggpairs(paintings_train_2, columns = c(1:10), 
+            progress = FALSE, 
+            title = "Title", cardinality_threshold = 60) +
+  theme_bw(base_size = 10) + 
+  theme(axis.text = element_text(size = 6))
+
+plots = lapply(1:p$ncol, function(i) getPlot(p, i = 1, j = i)) 
+
+ggmatrix(
+    plots[2:3],
+    nrow = 1,
+    ncol = 2,
+    yAxisLabels = "logprice" ,
+    xAxisLabels = p$yAxisLabels[2:3]
+)
+
+ggmatrix(
+    plots[4:5],
+    nrow = 1,
+    ncol = 2,
+    yAxisLabels = "logprice" ,
+    xAxisLabels = p$yAxisLabels[4:5]
+)
+
+ggmatrix(
+    plots[6:7],
+    nrow = 1,
+    ncol = 2,
+    yAxisLabels = "logprice" ,
+    xAxisLabels = p$yAxisLabels[6:7]
+)
+
+ggmatrix(
+    plots[8:10],
+    nrow = 1,
+    ncol = 3,
+    yAxisLabels = "logprice" ,
+    xAxisLabels = p$yAxisLabels[8:10]
+)
+# Source: https://stackoverflow.com/questions/28652380/printing-a-single-row-from-a-ggpairs-plot
+```
+
+## Second round of test
+```{r, fig.width=5, fig.height=3}
+
+## create ggpair plots
+
+p = ggpairs(paintings_train_2, columns = c(1,11:19), 
+            progress = FALSE, 
+            title = "Title", cardinality_threshold = 60) +
+  theme_bw(base_size = 10) + 
+  theme(axis.text = element_text(size = 6))
+
+plots = lapply(1:p$ncol, function(i) getPlot(p, i = 1, j = i)) 
+
+ggmatrix(
+    plots[2:3],
+    nrow = 1,
+    ncol = 2,
+    yAxisLabels = "logprice" ,
+    xAxisLabels = p$yAxisLabels[2:3]
+)
+
+ggmatrix(
+    plots[4:5],
+    nrow = 1,
+    ncol = 2,
+    yAxisLabels = "logprice" ,
+    xAxisLabels = p$yAxisLabels[4:5]
+)
+
+ggmatrix(
+    plots[6:7],
+    nrow = 1,
+    ncol = 2,
+    yAxisLabels = "logprice" ,
+    xAxisLabels = p$yAxisLabels[6:7]
+)
+
+ggmatrix(
+    plots[8:10],
+    nrow = 1,
+    ncol = 3,
+    yAxisLabels = "logprice" ,
+    xAxisLabels = p$yAxisLabels[8:10]
+)
+# Source: https://stackoverflow.com/questions/28652380/printing-a-single-row-from-a-ggpairs-plot
+```
+
+## Third round of test
+```{r, fig.width=8, fig.height=3}
+
+## create ggpair plots
+
+p = ggpairs(paintings_train_2, columns = c(1,20:39), 
+            progress = FALSE, 
+            title = "Title", cardinality_threshold = 60) +
+  theme_bw(base_size = 10) + 
+  theme(axis.text = element_text(size = 6))
+
+plots = lapply(1:p$ncol, function(i) getPlot(p, i = 1, j = i)) 
+
+ggmatrix(
+    plots[2:7],
+    nrow = 1,
+    ncol = 6,
+    yAxisLabels = "logprice" ,
+    xAxisLabels = p$yAxisLabels[2:7]
+)
+
+ggmatrix(
+    plots[8:13],
+    nrow = 1,
+    ncol = 6,
+    yAxisLabels = "logprice" ,
+    xAxisLabels = p$yAxisLabels[8:13]
+)
+
+ggmatrix(
+    plots[14:19],
+    nrow = 1,
+    ncol = 6,
+    yAxisLabels = "logprice" ,
+    xAxisLabels = p$yAxisLabels[14:19]
+)
+
+ggmatrix(
+    plots[20:25],
+    nrow = 1,
+    ncol = 6,
+    yAxisLabels = "logprice" ,
+    xAxisLabels = p$yAxisLabels[20:25]
+)
+# Source: https://stackoverflow.com/questions/28652380/printing-a-single-row-from-a-ggpairs-plot
+```
+
+
+\bftext
+From the scatter plots of logprice with respect to those chosen ten variables, we decided to include variables $position$, $school_pntg$, $endbuyer$, and $Surface$. The reason is that for continuous variables (such as $Surface$), there is a roughly linear positive relationship displayed. For categorical variables, the response variable $logprice$ show different levels given different categories, indicating that different categories do have impacts on the price.
+
+Repeat the same step for the rest variables (except for those that are obviously helpless, such as description, authorname etc.), we further picked up variables $origin_author$, $dealer$, $origin_cat$, $nfigures$, $figures, $and $prevcoll$.
+
+
+```{r, eval=FALSE}
+## mat test
+mat_count = 
+  paintings_train %>%
+  group_by(mat) %>% 
+  summarise(sum = n()) %>% 
+  filter(sum >= 10,
+         mat != "",
+         mat != "n/a")
+
+mat_test = 
+  paintings_train %>% 
+  select(logprice, mat) %>% 
+  filter(mat %in% count$mat)
+
+p = ggpairs(mat_test, columns = c(1:2), 
+            progress = FALSE, 
+            title = "Title", cardinality_threshold = 60) +
+  theme_bw(base_size = 10) + 
+  theme(axis.text = element_text(size = 6))
+
+p
+```
+
+\bftext
+The variables $mat$ is intuitively important in determining the price. However, since it contains too many levels, making it almost impossible to generate a bar graph comparing all the levels at the same time, we filtered out $mat$ with less than 10 total observations. It is beneficial also because small sample sizes will make our estimates have large variance in the final model. 
+
+By looking at the box plots, for different supporting materials there are slightly differences in the price (at least for "p" supporting material). Therefore, we consider adding $mat$ into the model (with the filter) and whether it is significant in determing the price.  
+
+### Build your first model
+
+In the first model predict the auction price `price` using the transformation `logprice` using at least 10 and up to 20 predictors and any interactions to build a model using linear regression.  You may use stepwise model selection to simplify the model using AIC and/or BIC.  For reference, we will fit the null model to initialize the leaderboard, but replace model1 with your recommended model.
+
+## RMSE function
+```{r}
+rmse = function(obs, pred) { sqrt(sum((obs - pred)^2, na.rm = TRUE)/length(obs))}
+```
+
+## first round
+```{r model1, echo=TRUE, cache=TRUE}
+
+paintings_train_2 = paintings_train %>% 
+  select(logprice, 
+         position, 
+         school_pntg, 
+         endbuyer,
+         Surface,
+         origin_author,
+         dealer,
+         origin_cat,
+         nfigures,
+         figures,
+         prevcoll,
+         mat) %>% 
+  filter(mat %in% mat_count$mat,
+         origin_cat != "S")
+  
+##model1 = lm(logprice ~ 1, data=paintings_train_2)
+ols = lm(logprice ~ (.)^2, data=paintings_train_2)
+
+## AIC
+AIC.ols <- step(ols, k = 2)
+summary(AIC.ols)
+
+```
+
+\bftext
+After the first round AIC testing, we get rid of several variables, including $school_pntg$, $endbuyer$, $origin_cat$, and $figures$. They are not significant at their base level. In addition, almost all the iteractions involved them are not significant or are NAs. 
+
+## second round
+```{r}
+
+paintings_train_2  = paintings_train %>% 
+  select(logprice, 
+         position, 
+         Surface,
+         origin_author,
+         dealer,
+         nfigures,
+         prevcoll,
+         mat) %>% 
+  filter(mat %in% mat_count$mat)
+  
+##model1 = lm(logprice ~ 1, data=paintings_train_2)
+ols = lm(logprice ~ (.)^2, data=paintings_train_2)
+
+## AIC
+AIC.ols <- step(ols, k = 2)
+summary(AIC.ols)
+
+paintings_test2 = paintings_test %>% 
+  filter(mat %in% paintings_train_2$mat)
+
+```
+
+
+Save predictions and intervals.  
+```{r predict-model1, echo=FALSE}
+predictions = as.data.frame(
+  exp(predict(AIC.ols, newdata=paintings_test2, 
+              interval = "pred")))
+save(predictions, file="predict-test.Rdata")
+```
+
+
+### Part I Write up *Last day to submit is Dec 7 by 5; accepted until Dec 6 (5 points off if late)*
+
+Once you are satisfied with your model, provide a write up of your data analysis project in a new Rmd file/pdf file: `Part-I-Writeup.Rmd` by copying over salient parts of your R notebook. The written assignment consists of five parts:
+
+1. Introduction: Summary of problem and objectives (5 points)
+
+2. Exploratory data analysis (10 points): must include three correctly labeled graphs and an explanation that highlight the most important features that went into your model building.
+
+3. Development and assessment of an initial model (10 points)
+
+* Initial model: must include a summary table and an explanation/discussion for variable selection and overall amount of variation explained. 
+
+* Model selection: must include a discussion
+
+* Residual: must include residual plot(s) and a discussion.  
+
+* Variables: must include table of coefficients and CI
+
+4. Summary and Conclusions (10 points)
+
+What is the (median) price for the "baseline" category if there are categorical or dummy variables in the model (add CI's)?  (be sure to include units!) Highlight important findings and potential limitations of your model.  Does it appear that interactions are important?  What are the most important variables and/or interactions?  Provide interprations of how the most important variables influence the (median) price giving a range (CI).  Correct interpretation of coefficients for the log model desirable for full points.
+
+Provide recommendations for the art historian about features or combination of features to look for to find the most valuable paintings.
+
+_Points will be deducted for code chunks that should not be included, etc._
+
+*Upload write up  to Sakai any time before Dec 7th*
+
+###  Evaluation on test data for Part I
+
+Once your write up is submitted, your models will be evaluated on the following criteria based on predictions  on the test data (20 points): 
+
+* Bias:  Average (Yhat-Y)  positive values indicate the model tends to overestimate price (on average) while negative values indicate the model tends to underestimate price.
+
+* Maximum Deviation:  Max |Y-Yhat| -  identifies the worst prediction  made in the validation data set.
+
+* Mean Absolute Deviation:  Average |Y-Yhat| - the average error (regardless of sign).
+
+* Root Mean Square Error: Sqrt Average (Y-Yhat)^2
+
+* Coverage:  Average( lwr < Y < upr) 
+
+In order to have a passing wercker badge, your file for predictions needs to be the same length as the test data, with three columns:  fitted values, lower CI and upper CI values in that order with names, *fit*, *lwr*, and *upr* respectively such as in the code chunk below. 
+
+Save predictions and intervals.  
+```{r predict-model-final, echo=FALSE, include=FALSE}
+# change model1 or update as needed
+predictions = as.data.frame(
+  exp(predict(model1, newdata=paintings_test, 
+              interval = "pred")))
+save(predictions, file="predict-test.Rdata")
+```
+
+
+You will be able to see your scores on the score board.  They will be initialized by a prediction based on the mean in the training data.
+
+
+## Part II: Complex Model  (start Dec 4th ideally!)
+
+In this part you may go all out for constructing a best fitting model for predicting housing prices using methods that we have covered this semester.  You should feel free to to create any new variables (such as quadratic, interaction, or indicator variables, splines, etc) and try different methods, keeping in mind you should be able to explain your methods and results.
+
+Update your predictions using your complex model to provide point estimates and CI.
+
+```{r predict-model2, echo=FALSE}
+# replace model1 with model2 here
+predictions = as.data.frame(
+  exp(predict(model1, newdata=paintings_test, 
+              interval = "pred")))
+save(predictions, file="predict-test.Rdata")
+```
+
+You may iterate here as much as you like exploring different models until you are satisfied with your results, however keep in mind you must be able to explain your results to the art historian.
+
+### Part II: Write Up
+
+Once you are satisfied with your model, provide a write up of your data analysis project in a new Rmd file/pdf file: `Part-II-Writeup.Rmd` by copying over salient parts of your R notebook and the previous writeup (you should also save the pdf version) The written assignment consists of five parts:
+
+1. Introduction (1 point if improved from before)
+  add previous intro with any edits
+
+2. Exploratory data analysis (1 point if improved from before): 
+   add previous EDA
+   
+3. Discussion of preliminary model Part I (5 points)
+Discuss performance based on leader board results and suggested refinements.
+
+4.  Development of the final model (20 points)
+
+* Final model: must include a summary table
+
+* Variables: must include an explanation
+
+* Variable selection/shrinkage: must use appropriate method and include an explanation
+
+
+* Residual: must include a residual plot and a discussion
+
+* discussion of how prediction intervals obtained 
+
+5. Assessment of the final model (25 points)
+
+
+* Model evaluation: must include an evaluation discussion
+
+* Model testing : must include a discussion
+
+* Model result: must include a selection and discussion of the top 10 valued  paintings in the validation data.
+
+6. Conclusion (10 points): must include a summary of results and a discussion of things learned. Optional what would you do if you had more time.
+
+
+
+### Final Predictions Validation (20 points)
+Create predictions for the validation data from your final model using the dataframe `paintings_validation.Rdata` in your repo.  You may refit your final model to the combined training and test data.  Write predictions out to a file `prediction-validation.Rdata`
+*This should have the same format as the model output in Part I and II!*
+
+
+## Final: Class Presentations and Peer Evaluation
+
+Each Group should prepare 5 slides in their Github repo:  (save as slides.pdf)
+
+* Most interesting graphic  _a picture (painting) is worth a thousand words prize!_  
+
+* Best Model (motivation, how you found it, why you think it is best)
+
+* Best Insights into predicting Price.
+
+* 3 Best Paintings to purchase  (and why) (images are a bonus!)
+
+* Best Team Name/Graphic
+
+We will select winners based on the above criteria and overall performance.
+
+
+Finally your repo should have: `Part-I-Writeup.Rmd`, `Part-I-Writeup.pdf`,  `Part-II-Writeup.Rmd`, `Part-II-Writeup.pdf`,`slides.Rmd` (and whatever output you use for the presentation) and `predict-train.Rdata`,  `predict-test.Rdata` `predict-validation.Rdata`.
