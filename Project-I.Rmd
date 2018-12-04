@@ -8,33 +8,13 @@ output: pdf_document
 knitr::opts_chunk$set(echo = FALSE)
 ```
 
-
-For this project you will take the role of a consultant hired by an Art historian to explore what drove prices of paintings in 18th century Paris.  They have provided you with auction price data from 1764-1780 on the sales (seller/buyer), painter, and other characteristics of paintings. 
-
-## About the Data Analysis Project
-
-The art historian would like to know what factors drove prices of painting, which paintings might be overvalued and which are undervalued.   It is up to you to decide what methods you want to use (frequentist or Bayesian or a combination) to answer these questions, and implement them to help to identify undervalued and overvalued paintings, as well as which features and possible interactions are at play.
-
-
-You will have three data sets: a subset for training, a subset for testing, and a third subset for validation. You will be asked to do data exploration and build your model (or models) initially using only the training data. Then, you will test your model on the testing data, and finally validate using the validation data. We are challenging you to keep your analysis experience realistic, and in a realistic scenario you would not have access to all three of these data sets at once.  You will be able to see on our scoreboard how well your team is doing based on its predictive performance on the testing data.  After your project is turned in you will see the final score on the validation set.   
-
-All members of the team should contribute equally and may be asked to answer any questions about the analysis at the final presentation.
-
-*For your analysis create a new Rmd named "project-I.Rmd" for part I
-and update accordingly rather than editing this.  Your write up should not have any of the instructions, for example.  Figures should be labeled appropriately and report numbers using significant digits.  This file may be updated so do not edit this document.*
-
-## Code:
-
-In your write up your code should be hidden (`echo = FALSE`) so that your document is neat and easy to read. However your document should include all your code such that if I re-knit your Rmd file I should be able to obtain the results you presented.   If there is any code that you wish to highlight you may included it, but it should contribute significantly to your write up that should be directed to the art historian.
-
-see Due dates in Sakai/Calendar for submissions
-
 ### Read in Training Data
-```{r message=FALSE, warning=FALSE}
+```{r message=FALSE, warning=FALSE, echo =FALSE}
 library(knitr)
 library(dplyr)
 library(ggplot2)
 library(GGally)
+library(mice)
 ```
 
 
@@ -44,7 +24,178 @@ load("paintings_train.Rdata")
 load("paintings_test.Rdata")
 ```
 
-The Code Book is in the file `paris_paintings.md` provides more information about the data.
+
+## Manually Data Cleaning
+```{r}
+## Remove Intuitively Useless Variables
+paintings_train_1 = paintings_train %>% 
+  select(-sale,
+         -price,
+         -count,
+         -subject,
+         -authorstandard,
+         -author,
+         -winningbidder,
+         -other,
+         -Height_in,
+         -Width_in,
+         -Surface_Rect,
+         -Diam_in,
+         -Surface_Rnd,
+         -material,
+         -mat,
+         -lands_sc,
+         -lands_elem,
+         -lands_figs,
+         -lands_ment,
+         -lot)
+
+
+## Change variable types $ impute missing values
+paintings_train_2 = paintings_train_1 %>% 
+  mutate(
+    authorstyle = ifelse(authorstyle == "n/a", 0, 1) %>% as.factor(.),
+    winningbiddertype = ifelse(winningbiddertype == "", "X", winningbiddertype),
+    endbuyer = ifelse(endbuyer == "", "X", endbuyer),
+    #Interm = ifelse(is.na(Interm), "X", Interm), ## use mice to impute
+    type_intermed = ifelse(type_intermed == "", "X", type_intermed),
+    materialCat = ifelse(materialCat == "", "other", materialCat),
+    Shape = ifelse(Shape %in% c("round", "roude"), "round",
+                   ifelse(Shape %in% c("oval", "ovale"), "oval",
+                          ifelse(Shape == "squ_rect", "squ_rect", "other"))),
+    
+    #lot = as.numeric(lot),
+    #lot = ifelse(is.na(lot), 5, 
+    #             ifelse((1 <= lot & lot <= 20), 1, 
+    #                    ifelse((21 <= lot & lot <= 50), 2, 
+    #                           ifelse((51 <= lot & lot <= 100), 3, 
+    #                                  ifelse((101 <= lot & lot <= 200), 4, 
+    #                                         ifelse(is.na(lot), 5, 5)))))) %>% as.factor(.),
+    
+    ##Surface = ifelse(!is.na(Surface), Surface, rnorm(1, median(Surface, na.rm = TRUE), 2)), ## use mice to impute
+    
+    artistliving = as.factor(artistliving),
+    diff_origin = as.factor(diff_origin),
+    engraved = as.factor(engraved),
+    original = as.factor(original),
+    prevcoll = as.factor(prevcoll),
+    othartist = as.factor(othartist),
+    paired = as.factor(paired),
+    figures = as.factor(figures),
+    lrgfont = as.factor(lrgfont),
+    relig = as.factor(relig),
+    landsALL = as.factor(landsALL),
+    arch = as.factor(arch),
+    mytho = as.factor(mytho),
+    peasant = as.factor(peasant),
+    othgenre = as.factor(othgenre),
+    singlefig = as.factor(singlefig),
+    portrait = as.factor(portrait),
+    still_life = as.factor(still_life),
+    discauth = as.factor(discauth),
+    history = as.factor(history),
+    allegory = as.factor(allegory),
+    pastorale = as.factor(pastorale),
+    finished = as.factor(finished)
+  ) %>% 
+  .[,c(8, 1:7, 9:45)]
+
+str(paintings_train_2)
+
+#paintings_train_1 %>% 
+#  group_by(Shape) %>% 
+#  summarise(sum = n()) %>% 
+#  arrange(desc(sum))
+  
+
+```
+
+1. Grouped "lot"
+2. Missing value (space + n/a) all coded as "X"
+3. For categorical variables, levels with few observations (smaller than 10) are combines into a single level.
+4. For numeric variable (Shape only here), imputed missing values from a normal distribution centered at the median of the variable, with some small variance.
+
+
+## Package Data Cleaning
+```{r}
+
+test = paintings_train_1 %>% 
+  mutate(
+    authorstyle = ifelse(authorstyle == "n/a", 0, 1) %>% as.factor(.),
+    winningbiddertype = ifelse(winningbiddertype == "", NA, winningbiddertype),
+    endbuyer = ifelse(endbuyer == "", NA, endbuyer),
+    type_intermed = ifelse(type_intermed == "", NA, type_intermed),
+    
+    material = ifelse(material %in% c("n/a", "", "-"), NA, material),
+    mat = ifelse(mat %in% c("n/a", ""), NA, mat),
+    materialCat = ifelse(materialCat == "", NA, materialCat),
+    Shape = ifelse(Shape == "", NA, Shape),
+    
+    Interm = as.factor(Interm),
+    artistliving = as.factor(artistliving),
+    diff_origin = as.factor(diff_origin),
+    nfigures = as.factor(nfigures),
+    engraved = as.factor(engraved),
+    original = as.factor(original),
+    prevcoll = as.factor(prevcoll),
+    othartist = as.factor(othartist),
+    paired = as.factor(paired),
+    figures = as.factor(figures),
+    lrgfont = as.factor(lrgfont),
+    relig = as.factor(relig),
+    landsALL = as.factor(landsALL),
+    lands_sc = as.factor(lands_sc),
+    lands_elem= as.factor(lands_elem),
+    lands_figs = as.factor(lands_figs),
+    lands_ment = as.factor(lands_ment),
+    arch = as.factor(arch),
+    mytho = as.factor(mytho),
+    peasant = as.factor(peasant),
+    othgenre = as.factor(othgenre),
+    singlefig = as.factor(singlefig),
+    portrait = as.factor(portrait),
+    still_life = as.factor(still_life),
+    discauth = as.factor(discauth),
+    history = as.factor(history),
+    allegory = as.factor(allegory),
+    pastorale = as.factor(pastorale),
+    finished = as.factor(finished)
+  ) %>% 
+  select(-Height_in,
+         -Width_in,
+         -Surface_Rect,
+         -Diam_in,
+         -Surface_Rnd)
+
+
+
+## impute missing values
+misscol = test %>% 
+  select(Surface, 
+         winningbiddertype, 
+         endbuyer, 
+         Interm, 
+         type_intermed, 
+         Shape, 
+         material, 
+         mat, 
+         materialCat)
+
+misscol %>% 
+  group_by(endbuyer) %>% 
+  summarise(n())
+
+output = mice::mice(test)
+
+a <- mice::complete(output)
+
+m <- data.frame(cbind(a$Surface, test = test$Surface)) %>% 
+  filter(is.na(test))
+
+```
+
+
+
 
 ## Part I: Simple Model 
 
@@ -52,56 +203,148 @@ The Code Book is in the file `paris_paintings.md` provides more information abou
 
 Using EDA and any numerical summaries get to know the data -  identify what you might consider the 10 best variables for predicting `logprice` using scatterplots with other variables represented using colors or symbols, scatterplot matrices or conditioning plots.  
 
+## First round of test
 ```{r, fig.width=3, fig.height=5}
-t(summary(paintings_train))
 
 ## create ggpair plots
-paintings_train_1 <- paintings_train %>% 
-  select(logprice, position, school_pntg, artistliving, endbuyer, Surface, Shape,
-         paired, finished, lrgfont)
 
-p = ggpairs(paintings_train_1, columns = c(1:10), 
+p = ggpairs(paintings_train_2, columns = c(1:10), 
             progress = FALSE, 
             title = "Title", cardinality_threshold = 60) +
   theme_bw(base_size = 10) + 
   theme(axis.text = element_text(size = 6))
 
-plots = lapply(1:p$nrow, function(i) getPlot(p, i = i, j = 1)) 
+plots = lapply(1:p$ncol, function(i) getPlot(p, i = 1, j = i)) 
 
 ggmatrix(
     plots[2:3],
-    nrow = 2,
-    ncol = 1,
-    xAxisLabels = "logprice" ,
-    yAxisLabels = p$yAxisLabels[2:3]
+    nrow = 1,
+    ncol = 2,
+    yAxisLabels = "logprice" ,
+    xAxisLabels = p$yAxisLabels[2:3]
 )
-# Source: https://stackoverflow.com/questions/28652380/printing-a-single-row-from-a-ggpairs-plot
 
 ggmatrix(
     plots[4:5],
-    nrow = 2,
-    ncol = 1,
-    xAxisLabels = "logprice" ,
-    yAxisLabels = p$yAxisLabels[4:5]
+    nrow = 1,
+    ncol = 2,
+    yAxisLabels = "logprice" ,
+    xAxisLabels = p$yAxisLabels[4:5]
 )
 
 ggmatrix(
     plots[6:7],
-    nrow = 2,
-    ncol = 1,
-    xAxisLabels = "logprice" ,
-    yAxisLabels = p$yAxisLabels[6:7]
+    nrow = 1,
+    ncol = 2,
+    yAxisLabels = "logprice" ,
+    xAxisLabels = p$yAxisLabels[6:7]
 )
 
 ggmatrix(
     plots[8:10],
-    nrow = 3,
-    ncol = 1,
-    xAxisLabels = "logprice" ,
-    yAxisLabels = p$yAxisLabels[8:10]
+    nrow = 1,
+    ncol = 3,
+    yAxisLabels = "logprice" ,
+    xAxisLabels = p$yAxisLabels[8:10]
 )
 # Source: https://stackoverflow.com/questions/28652380/printing-a-single-row-from-a-ggpairs-plot
 ```
+
+## Second round of test
+```{r, fig.width=5, fig.height=3}
+
+## create ggpair plots
+
+p = ggpairs(paintings_train_2, columns = c(1,11:19), 
+            progress = FALSE, 
+            title = "Title", cardinality_threshold = 60) +
+  theme_bw(base_size = 10) + 
+  theme(axis.text = element_text(size = 6))
+
+plots = lapply(1:p$ncol, function(i) getPlot(p, i = 1, j = i)) 
+
+ggmatrix(
+    plots[2:3],
+    nrow = 1,
+    ncol = 2,
+    yAxisLabels = "logprice" ,
+    xAxisLabels = p$yAxisLabels[2:3]
+)
+
+ggmatrix(
+    plots[4:5],
+    nrow = 1,
+    ncol = 2,
+    yAxisLabels = "logprice" ,
+    xAxisLabels = p$yAxisLabels[4:5]
+)
+
+ggmatrix(
+    plots[6:7],
+    nrow = 1,
+    ncol = 2,
+    yAxisLabels = "logprice" ,
+    xAxisLabels = p$yAxisLabels[6:7]
+)
+
+ggmatrix(
+    plots[8:10],
+    nrow = 1,
+    ncol = 3,
+    yAxisLabels = "logprice" ,
+    xAxisLabels = p$yAxisLabels[8:10]
+)
+# Source: https://stackoverflow.com/questions/28652380/printing-a-single-row-from-a-ggpairs-plot
+```
+
+## Third round of test
+```{r, fig.width=8, fig.height=3}
+
+## create ggpair plots
+
+p = ggpairs(paintings_train_2, columns = c(1,20:45), 
+            progress = FALSE, 
+            title = "Title", cardinality_threshold = 60) +
+  theme_bw(base_size = 10) + 
+  theme(axis.text = element_text(size = 6))
+
+plots = lapply(1:p$ncol, function(i) getPlot(p, i = 1, j = i)) 
+
+ggmatrix(
+    plots[2:7],
+    nrow = 1,
+    ncol = 6,
+    yAxisLabels = "logprice" ,
+    xAxisLabels = p$yAxisLabels[2:7]
+)
+
+ggmatrix(
+    plots[8:13],
+    nrow = 1,
+    ncol = 6,
+    yAxisLabels = "logprice" ,
+    xAxisLabels = p$yAxisLabels[8:13]
+)
+
+ggmatrix(
+    plots[14:19],
+    nrow = 1,
+    ncol = 6,
+    yAxisLabels = "logprice" ,
+    xAxisLabels = p$yAxisLabels[14:19]
+)
+
+ggmatrix(
+    plots[20:25],
+    nrow = 1,
+    ncol = 6,
+    yAxisLabels = "logprice" ,
+    xAxisLabels = p$yAxisLabels[20:25]
+)
+# Source: https://stackoverflow.com/questions/28652380/printing-a-single-row-from-a-ggpairs-plot
+```
+
+
 \bftext
 From the scatter plots of logprice with respect to those chosen ten variables, we decided to include variables $position$, $school_pntg$, $endbuyer$, and $Surface$. The reason is that for continuous variables (such as $Surface$), there is a roughly linear positive relationship displayed. For categorical variables, the response variable $logprice$ show different levels given different categories, indicating that different categories do have impacts on the price.
 
