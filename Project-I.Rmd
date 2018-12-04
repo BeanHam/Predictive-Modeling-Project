@@ -118,10 +118,12 @@ paintings_train_2 = paintings_train_1 %>%
 
 ## Package Data Cleaning
 ```{r}
+paintings_train_3 = paintings_train_2 %>% 
+  mutate(Interm = as.numeric(Interm))
 
-output = mice::mice(test)
-
-a <- mice::complete(output)
+micetest = mice::mice(paintings_train_3)
+paintings_train_4 = mice::complete(output) %>% 
+  mutate(Interm = as.factor(Interm))
 
 ```
 
@@ -135,7 +137,7 @@ a <- mice::complete(output)
 Using EDA and any numerical summaries get to know the data -  identify what you might consider the 10 best variables for predicting `logprice` using scatterplots with other variables represented using colors or symbols, scatterplot matrices or conditioning plots.  
 
 ## First round of test
-```{r, fig.width=3, fig.height=5}
+```{r, fig.width=8, fig.height=5}
 
 ## create ggpair plots
 
@@ -227,6 +229,7 @@ ggmatrix(
 )
 # Source: https://stackoverflow.com/questions/28652380/printing-a-single-row-from-a-ggpairs-plot
 ```
+
 
 ## Third round of test
 ```{r, fig.width=8, fig.height=3}
