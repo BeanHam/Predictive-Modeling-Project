@@ -130,8 +130,9 @@ paintings_train_3 = mice::complete(micetest) %>%
 
 Using EDA and any numerical summaries get to know the data -  identify what you might consider the 10 best variables for predicting `logprice` using scatterplots with other variables represented using colors or symbols, scatterplot matrices or conditioning plots.  
 
-```{r, fig.width=3, fig.height=3, message=FALSE, warning=FALSE}
+```{r, message=FALSE, warning=FALSE}
 
+par(mfrow = c(2, 2))
 graph_numeric = paintings_train_3 %>% 
   dplyr::select(position,
          year,
@@ -154,8 +155,10 @@ for (i in 1:ncol(graph_numeric)){
 }
 ```
 
+
 ```{r}
 ## categorical
+par(mfrow = c(2,3))
 for (i in 1:ncol(graph_categorical)){
   boxplot(paintings_train_3$logprice ~ graph_categorical[,i],
           ylab = "logprice",
@@ -215,6 +218,8 @@ ols = lm(logprice ~
            landsALL + 
            still_life)^2, data = paintings_train_3)
 summary(ols)
+plot(ols)
+
 ```
 
 
@@ -228,18 +233,6 @@ rmse.AIC = rmse(test$logprice, AIC.fitted)
 
 ```
 
-## BIC selection
-```{r}
-n = nrow(paintings_train_5)
-BIC.ols <- step(ols.2, k = log(n))
-summary(BIC.ols)
-```
-
-
-## Lasso Selection
-```{r}
-lasso = cv.glmnet(as.matrix(paintings_train_4[, -1]), alpha=1, paintings_train_4$logprice)
-```
 
 ## Clean Test Data
 ```{r}
@@ -306,6 +299,7 @@ paintings_test_2 = paintings_test_1 %>%
 
 ```
 
+
 ```{r}
 
 micetest.2 = mice::mice(paintings_test_2)
@@ -316,8 +310,7 @@ paintings_test_3 = mice::complete(micetest.2) %>%
 ```
 
 
-
-Save predictions and intervals.  
+## Save predictions and intervals.  
 ```{r predict-model1, echo=FALSE, eval=FALSE}
 predictions = as.data.frame(
   exp(predict(AIC.ols, newdata=paintings_test_3, 
