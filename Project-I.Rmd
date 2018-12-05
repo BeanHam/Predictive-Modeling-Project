@@ -207,10 +207,11 @@ paintings_train_5 = paintings_train_4 %>%
          -origin_cat,
          -school_pntg)
 
-ols.2 = lm(logprice ~ (.)^2, data=paintings_train_5)
-AIC.ols <- step(ols.2, k = 2)
-summary(AIC.ols)
+ols.2 = lm(logprice ~ ., data=paintings_train_5)
+summary(ols.2)
 
+AIC.ols = step(ols.2, k = 2)
+summary(AIC.ols)
 ```
 
 ## BIC selection
@@ -275,7 +276,6 @@ paintings_test_2 = paintings_test_1 %>%
     origin_author = as.factor(origin_author),
     origin_cat = as.factor(origin_cat),
     school_pntg = as.factor(school_pntg),
-    Interm = as.factor(Interm),
     authorstyle = ifelse(authorstyle %in% c("n/a", ""), 0, 1) %>% as.factor(),
     winningbiddertype = ifelse(winningbiddertype %in% c("n/a", ""), "X", winningbiddertype) %>% as.factor(),
     endbuyer = ifelse(endbuyer %in% c("n/a", ""), "X", endbuyer) %>% as.factor(),
@@ -311,13 +311,21 @@ paintings_test_2 = paintings_test_1 %>%
 
 ```
 
+```{r}
+
+micetest.2 = mice::mice(paintings_test_2)
+
+paintings_test_3 = mice::complete(micetest.2) %>% 
+  mutate(Interm = as.factor(Interm))
+
+```
+
 
 Save predictions and intervals.  
 ```{r predict-model1, echo=FALSE, eval=FALSE}
 predictions = as.data.frame(
-  exp(predict(AIC.ols, newdata=paintings_test_2, 
-              interval = "pred"))) %>% 
-  na.omit()
+  exp(predict(ols.3, newdata=paintings_test_3, 
+              interval = "pred")))
 save(predictions, file="predict-test.Rdata")
 ```
 
