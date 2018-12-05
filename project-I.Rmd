@@ -1,0 +1,210 @@
+---
+title: "STA 521 Final Project Part I"
+author: "Jonathan Klus"
+date: "November 28, 2018"
+output: pdf_document
+---
+
+```{r read_data, echo=TRUE, warning=FALSE, message=FALSE}
+library(dplyr)
+
+set.seed(11561)
+
+load("paintings_train.Rdata")
+#load("paintings_test.Rdata")
+```
+
+The Code Book is in the file `paris_paintings.md` provides more information about the data.
+
+## Part I: Simple Model 
+
+### EDA
+
+Using EDA and any numerical summaries get to know the data -  identify what you might consider the 10 best variables for predicting `logprice` using scatterplots with other variables represented using colors or symbols, scatterplot matrices or conditioning plots.  
+
+```{r EDA}
+# initial look at data
+summary(paintings_train)
+
+# clean data set
+train_df = paintings_train %>% 
+  dplyr::select(
+         -sale,
+         -price,
+         -count,
+         -subject,
+         -authorstandard,
+         -author,
+         -winningbidder,
+         -other,
+         -Height_in,
+         -Width_in,
+         -Surface_Rect,
+         -Diam_in,
+         -Surface_Rnd,
+         -material,
+         -mat,
+         -lands_sc,
+         -lands_elem,
+         -lands_figs,
+         -lands_ment,
+         -lot) %>%
+  dplyr::transmute(
+    logprice = as.numeric(logprice),
+    dealer = as.factor(dealer),
+    origin_author = as.factor(origin_author),
+    origin_cat = as.factor(origin_cat),
+    school_pntg = as.factor(school_pntg),
+    authorstyle = ifelse(authorstyle %in% c("n/a", ""), 0, 1) %>% as.factor(),
+    winningbiddertype = ifelse(winningbiddertype %in% c("n/a", ""), "X", winningbiddertype) %>% as.factor(),
+    endbuyer = if_else(endbuyer %in% c("n/a", ""), "X", endbuyer) %>% as.factor(),
+    interm = if_else(is.na(Interm) == TRUE,
+                   rbinom(1,1,0.7), # need to adjust prob here
+                   Interm) %>% as.factor(),
+    type_intermed = ifelse(type_intermed %in% c("n/a", ""), "X", type_intermed) %>% as.factor(),
+    materialCat = ifelse(materialCat %in% c("n/a", ""), "other", materialCat) %>% as.factor(),
+    shape = if_else(Shape %in% c("round", "roude"), "round",
+                   ifelse(Shape %in% c("oval", "ovale"), "oval",
+                          ifelse(Shape == "squ_rect", "squ_rect", "other"))) %>% as.factor(),
+    surface = if_else(is.na(Surface) == TRUE,
+                   as.double(rpois(1,270)), # using med var in training data  
+                   Surface) %>% as.numeric(),
+    artistliving = as.factor(artistliving),
+    diff_origin = as.factor(diff_origin),
+    engraved = as.factor(engraved),
+    original = as.factor(original),
+    prevcoll = as.factor(prevcoll),
+    othartist = as.factor(othartist),
+    paired = as.factor(paired),
+    figures = as.factor(figures),
+    lrgfont = as.factor(lrgfont),
+    relig = as.factor(relig),
+    landsALL = as.factor(landsALL),
+    arch = as.factor(arch),
+    mytho = as.factor(mytho),
+    peasant = as.factor(peasant),
+    othgenre = as.factor(othgenre),
+    singlefig = as.factor(singlefig),
+    portrait = as.factor(portrait),
+    still_life = as.factor(still_life),
+    discauth = as.factor(discauth),
+    history = as.factor(history),
+    allegory = as.factor(allegory),
+    pastorale = as.factor(pastorale),
+    finished = as.factor(finished)
+    )
+
+# plots
+
+# corr matrix
+
+```
+
+
+### Build your first model
+
+In the first model predict the auction price `price` using the transformation `logprice` using at least 10 and up to 20 predictors and any interactions to build a model using linear regression.  You may use stepwise model selection to simplify the model using AIC and/or BIC.  For reference, we will fit the null model to initialize the leaderboard, but replace model1 with your recommended model.
+
+
+```{r model1, echo=TRUE}
+model1 = lm(logprice ~ . + .^2, data=train_df)
+summary(model1)
+```
+
+### LASSO - variable selection
+```{r yeehaw}
+x_mat = as.matrix(train_df[,-1])
+y_mat = as.matrix(train_df[,1])
+glmnet::glmnet(y = y_mat, x = x_mat, family = c("gaussian"), alpha = 1)
+```
+
+### BMA - variable selection
+```{r BMA, cache = TRUE}
+# bas.lm.vars = BAS::bas.lm(logprice ~ ., data = train_df, 
+#                           prior = "ZS-null",
+#                           alpha = 1,
+#                           method = "MCMC")
+
+bas.lm.inter = BAS::bas.lm(logprice ~ .^2, data = train_df, 
+                          prior = "ZS-null",
+                          alpha = 1,
+                          method = "MCMC")
+plot(bas.lm.inter, which = 4)
+lm.inclProb = data.frame(inclProb = sort(summary(bas.lm.inter)[,1], decreasing = TRUE)) 
+
+lm.inclProb %>%
+  filter(inclProb > 0.5)
+```
+
+### Diagnostics
+```{r diagnosticfxns}
+# rmse
+rmse = function(y, y_hat){
+  
+}
+
+# coverage
+```
+
+Save predictions and intervals.  
+```{r predict-model1, echo=FALSE}
+predictions = as.data.frame(
+  exp(predict(model1, newdata=paintings_test, 
+              interval = "pred")))
+save(predictions, file="predict-test.Rdata")
+```
+
+
+### Part I Write up *Last day to submit is Dec 7 by 5; accepted until Dec 6 (5 points off if late)*
+
+Once you are satisfied with your model, provide a write up of your data analysis project in a new Rmd file/pdf file: `Part-I-Writeup.Rmd` by copying over salient parts of your R notebook. The written assignment consists of five parts:
+
+1. Introduction: Summary of problem and objectives (5 points)
+
+2. Exploratory data analysis (10 points): must include three correctly labeled graphs and an explanation that highlight the most important features that went into your model building.
+
+3. Development and assessment of an initial model (10 points)
+
+* Initial model: must include a summary table and an explanation/discussion for variable selection and overall amount of variation explained. 
+
+* Model selection: must include a discussion
+
+* Residual: must include residual plot(s) and a discussion.  
+
+* Variables: must include table of coefficients and CI
+
+4. Summary and Conclusions (10 points)
+
+What is the (median) price for the "baseline" category if there are categorical or dummy variables in the model (add CI's)?  (be sure to include units!) Highlight important findings and potential limitations of your model.  Does it appear that interactions are important?  What are the most important variables and/or interactions?  Provide interprations of how the most important variables influence the (median) price giving a range (CI).  Correct interpretation of coefficients for the log model desirable for full points.
+
+Provide recommendations for the art historian about features or combination of features to look for to find the most valuable paintings.
+
+_Points will be deducted for code chunks that should not be included, etc._
+
+*Upload write up  to Sakai any time before Dec 7th*
+
+###  Evaluation on test data for Part I
+
+Once your write up is submitted, your models will be evaluated on the following criteria based on predictions  on the test data (20 points): 
+
+* Bias:  Average (Yhat-Y)  positive values indicate the model tends to overestimate price (on average) while negative values indicate the model tends to underestimate price.
+
+* Maximum Deviation:  Max |Y-Yhat| -  identifies the worst prediction  made in the validation data set.
+
+* Mean Absolute Deviation:  Average |Y-Yhat| - the average error (regardless of sign).
+
+* Root Mean Square Error: Sqrt Average (Y-Yhat)^2
+
+* Coverage:  Average( lwr < Y < upr) 
+
+In order to have a passing wercker badge, your file for predictions needs to be the same length as the test data, with three columns:  fitted values, lower CI and upper CI values in that order with names, *fit*, *lwr*, and *upr* respectively such as in the code chunk below. 
+
+Save predictions and intervals.  
+```{r predict-model-final, echo=FALSE, include=FALSE}
+# change model1 or update as needed
+predictions = as.data.frame(
+  exp(predict(model1, newdata=paintings_test, 
+              interval = "pred")))
+save(predictions, file="predict-test.Rdata")
+```
+
