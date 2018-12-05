@@ -5,11 +5,13 @@ date: "November 28, 2018"
 output: pdf_document
 ---
 
-```{r read_data, echo=TRUE, warnings = FALSE}
+```{r read_data, echo=TRUE, warning=FALSE, message=FALSE}
 library(dplyr)
 
+set.seed(11561)
+
 load("paintings_train.Rdata")
-load("paintings_test.Rdata")
+#load("paintings_test.Rdata")
 ```
 
 The Code Book is in the file `paris_paintings.md` provides more information about the data.
@@ -21,74 +23,81 @@ The Code Book is in the file `paris_paintings.md` provides more information abou
 Using EDA and any numerical summaries get to know the data -  identify what you might consider the 10 best variables for predicting `logprice` using scatterplots with other variables represented using colors or symbols, scatterplot matrices or conditioning plots.  
 
 ```{r EDA}
-data_history = paintings_train
-str(paintings_train)
-paintings_train = paintings_train %>%
-  mutate(price = stringr::str_remove_all(price, ","))
-  mutate(price = as.numeric(price)) %>%
-  mutate(ifelse(is.na(price)) == TRUE, 0, price)
+train_df = paintings_train %>% 
+  dplyr::select(
+         -sale,
+         -price,
+         -count,
+         -subject,
+         -authorstandard,
+         -author,
+         -winningbidder,
+         -other,
+         -Height_in,
+         -Width_in,
+         -Surface_Rect,
+         -Diam_in,
+         -Surface_Rnd,
+         -material,
+         -mat,
+         -lands_sc,
+         -lands_elem,
+         -lands_figs,
+         -lands_ment,
+         -lot) %>%
+  dplyr::transmute(
+    logprice = as.numeric(logprice),
+    dealer = as.factor(dealer),
+    origin_author = as.factor(origin_author),
+    origin_cat = as.factor(origin_cat),
+    school_pntg = as.factor(school_pntg),
+    authorstyle = ifelse(authorstyle %in% c("n/a", ""), 0, 1) %>% as.factor(),
+    winningbiddertype = ifelse(winningbiddertype %in% c("n/a", ""), "X", winningbiddertype) %>% as.factor(),
+    endbuyer = if_else(endbuyer %in% c("n/a", ""), "X", endbuyer) %>% as.factor(),
+    interm = if_else(is.na(Interm) == TRUE,
+                   rbinom(1,1,0.7), # need to adjust prob here
+                   Interm) %>% as.factor(),
+    type_intermed = ifelse(type_intermed %in% c("n/a", ""), "X", type_intermed) %>% as.factor(),
+    materialCat = ifelse(materialCat %in% c("n/a", ""), "other", materialCat) %>% as.factor(),
+    shape = if_else(Shape %in% c("round", "roude"), "round",
+                   ifelse(Shape %in% c("oval", "ovale"), "oval",
+                          ifelse(Shape == "squ_rect", "squ_rect", "other"))) %>% as.factor(),
+    surface = if_else(is.na(Surface) == TRUE,
+                   as.double(rpois(1,270)), # using med var in training data  
+                   Surface) %>% as.numeric(),
+    artistliving = as.factor(artistliving),
+    diff_origin = as.factor(diff_origin),
+    engraved = as.factor(engraved),
+    original = as.factor(original),
+    prevcoll = as.factor(prevcoll),
+    othartist = as.factor(othartist),
+    paired = as.factor(paired),
+    figures = as.factor(figures),
+    lrgfont = as.factor(lrgfont),
+    relig = as.factor(relig),
+    landsALL = as.factor(landsALL),
+    arch = as.factor(arch),
+    mytho = as.factor(mytho),
+    peasant = as.factor(peasant),
+    othgenre = as.factor(othgenre),
+    singlefig = as.factor(singlefig),
+    portrait = as.factor(portrait),
+    still_life = as.factor(still_life),
+    discauth = as.factor(discauth),
+    history = as.factor(history),
+    allegory = as.factor(allegory),
+    pastorale = as.factor(pastorale),
+    finished = as.factor(finished)
+    )
+#%>%  
+ # .[,c(8, 1:7, 9:39)] # reorder so that y is first column
 
-# numeric variables
-paint_train_num = paintings_train[,-c(1,4,6,7,8,9,13,14,15,16,17,18,19,20,21,22,28,30,31,32,34:59)]
-summary(paint_train_num)
-## Diam_in and Surface_Rnd variables contain so many NAs that they will 
-## not be useful - they are >90% NAs. Therefore we will exclude them due 
-## to poor data quality
-paint_train_num = paint_train_num[,-c(10,11)]
+# imputation
 
-#par(mfrow = c(ceiling(length(paint_train_num)/3),3))
-for(i in 1:length(paint_train_num)){
-  plot(paintings_train$logprice, paint_train_num[,i])
-}
 
-# categorical variables
-paint_train_cat = paintings_train[,c(1,4,6,7,8,9,13,14,15,16,17,18,19,20,21,22,28,30,31,32,34:59)]
 
-train_df = dplyr::data_frame(
-  lot = paintings_train$lot, # not converting to integer because of 4 values type == char, unclear why
-  position = as.numeric(paintings_train$position),
-  dealer = as.factor(paintings_train$dealer),
-  year = as.integer(paintings_train$year),
-  origin_author = as.factor(paintings_train$origin_author),
-  origin_cat = as.factor(paintings_train$origin_cat),
-  school_pntg = as.factor(paintings_train$school_pntg),
-  diff_origin = as.factor(paintings_train$diff_origin),
-  logprice = as.numeric(paintings_train$logprice),
-  price = stringr::str_remove_all(paintings_train$price, ",") %>% as.numeric(),
-  artistliving = as.factor(paintings_train$artistliving),
-  authorstyle = dplyr::if_else(paintings_train$authorstyle == "n/a", 0, 1) %>% 
-                as.factor(), # recode
-  author = paintings_train$author %>% as.character(),
-  winningbidder = dplyr::if_else(paintings_train$winningbidder == "Unknown", 1, 0) %>%
-                  as.factor(), # recode
-  winningbiddertype = dplyr::if_else(paintings_train$winningbiddertype == "", 
-                      "NOINFO",
-                      paintings_train$winningbiddertype) %>%
-                      as.factor(),
-  endbuyer = dplyr::if_else(paintings_train$endbuyer == "", 
-             "NOINFO",
-             paintings_train$endbuyer) %>%
-             as.factor(),
-  interm = as.factor(paintings_train$Interm), # lots of NAs, not sure how to proceed
-  type_intermed = dplyr::if_else(paintings_train$type_intermed == "", 
-                  "NOINFO",
-                  paintings_train$type_intermed) %>%
-                  as.factor(),
-  height = as.numeric(paintings_train$Height_in), # lots of NAs, can impute mean
-  width = as.numeric(paintings_train$Width_in), # lots of NAs, can impute mean
-  surface_rect = as.numeric(paintings_train$Surface_Rect), # lots of NAs, can impute mean
-  shape = as.factor(paintings_train$Shape),
-  surface = as.numeric(paintings_train$Surface), # lots of NAs, can impute mean
-  material = dplyr::if_else(paintings_train$material == "", 
-             "NOINFO",
-              paintings_train$material) %>%
-              as.factor(),
-  mat = dplyr::if_else(paintings_train$mat %in% c("","n/a"), 
-             "NOINFO",
-              paintings_train$mat) %>%
-              as.factor(),  
-  
-)
+# dimension reduction for large group of indicator variables at the end
+# do random forest and determine which variables are most important
 
 ```
 
@@ -99,9 +108,31 @@ In the first model predict the auction price `price` using the transformation `l
 
 
 ```{r model1, echo=TRUE}
-model1 = lm(logprice ~ 1, data=paintings_train)
+model1 = lm(logprice ~ . + .^2, data=train_df)
+summary(model1)
 ```
 
+### LASSO - variable selection
+```{r yeehaw}
+glmnet::glmnet(y = as.matrix(train_df$logprice), x = as.matrix(train_df[,-1]),
+               alpha = 0)
+```
+
+### BMA - variable selection
+```{r BMA}
+bas.lm.vars = BAS::bas.lm(logprice ~ ., data = train_df, 
+                          prior = "ZS-null",
+                          alpha = 1,
+                          method = "MCMC")
+
+```
+
+### Diagnostics
+```{r diagnosticfxns}
+# rmse
+
+# coverage
+```
 
 Save predictions and intervals.  
 ```{r predict-model1, echo=FALSE}
