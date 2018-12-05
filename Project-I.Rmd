@@ -64,52 +64,6 @@ paintings_train_1 = paintings_train %>%
                 -lot)
 ```
 
-## TEST without "as.factor"
-```{r}
-## Change variable types $ impute missing values
-paintings_train_2 = paintings_train_1 %>% 
-  mutate(
-    #dealer = as.factor(dealer),
-    #origin_author = as.factor(origin_author),
-    #origin_cat = as.factor(origin_cat),
-    #school_pntg = as.factor(school_pntg),
-    authorstyle = ifelse(authorstyle %in% c("n/a", ""), 0, 1) %>% as.factor(),
-    winningbiddertype = ifelse(winningbiddertype %in% c("n/a", ""), "X", winningbiddertype),
-    endbuyer = ifelse(endbuyer %in% c("n/a", ""), "X", endbuyer),
-    type_intermed = ifelse(type_intermed %in% c("n/a", ""), "X", type_intermed),
-    materialCat = ifelse(materialCat %in% c("n/a", ""), "other", materialCat),
-    Shape = ifelse(Shape %in% c("round", "roude"), "round",
-                   ifelse(Shape %in% c("oval", "ovale"), "oval",
-                          ifelse(Shape == "squ_rect", "squ_rect", "other"))),
-    artistliving = as.factor(artistliving),
-    diff_origin = as.factor(diff_origin),
-    engraved = as.factor(engraved),
-    original = as.factor(original),
-    prevcoll = as.factor(prevcoll),
-    othartist = as.factor(othartist),
-    paired = as.factor(paired),
-    figures = as.factor(figures),
-    lrgfont = as.factor(lrgfont),
-    relig = as.factor(relig),
-    landsALL = as.factor(landsALL),
-    arch = as.factor(arch),
-    mytho = as.factor(mytho),
-    peasant = as.factor(peasant),
-    othgenre = as.factor(othgenre),
-    singlefig = as.factor(singlefig),
-    portrait = as.factor(portrait),
-    still_life = as.factor(still_life),
-    discauth = as.factor(discauth),
-    history = as.factor(history),
-    allegory = as.factor(allegory),
-    pastorale = as.factor(pastorale),
-    finished = as.factor(finished)
-  ) %>%  
-  .[,c(8, 1:7, 9:39)]
-
-str(paintings_train_2)
-```
-
 
 ```{r}
 ## Change variable types $ impute missing values
@@ -170,19 +124,12 @@ paintings_train_3 = mice::complete(micetest) %>%
 
 ```
 
-## Split the data into train and test
-```{r}
-n = sample(1:1500, 1200, replace = FALSE)
-train = paintings_train_3[n,]
-test = paintings_train_3[-n,]
-```
-
-
 ## Part I: Simple Model 
 
 ### EDA
 
 Using EDA and any numerical summaries get to know the data -  identify what you might consider the 10 best variables for predicting `logprice` using scatterplots with other variables represented using colors or symbols, scatterplot matrices or conditioning plots.  
+
 ```{r, fig.width=3, fig.height=3, message=FALSE, warning=FALSE}
 
 graph_numeric = paintings_train_3 %>% 
@@ -231,36 +178,28 @@ If we were to choose 10 best predictive variables for predicting, we would consi
 
 In the first model predict the auction price `price` using the transformation `logprice` using at least 10 and up to 20 predictors and any interactions to build a model using linear regression.  You may use stepwise model selection to simplify the model using AIC and/or BIC.  For reference, we will fit the null model to initialize the leaderboard, but replace model1 with your recommended model.
 
+## BMA variable selection
+```{r}
+bma = bas.lm(logprice~ ., 
+             data=paintings_train_3, 
+             method="MCMC", 
+             prior = "JZS",
+             modelprior=beta.binomial(1,1),
+             n.models = 10000, MCMC.iterations=100000, 
+             thin = 10, initprobs="marg-eplogp",
+             force.heredity=FALSE)
 
-## OLS variable selection
-```{r model1, echo=TRUE, cache=TRUE, eval=FALSE}
+plot(bma, which=4)
+BPM = predict(bma, estimator = "BPM")
+variable.names(BPM)
+```
 
-#paintings_train_4 = paintings_train_3 %>% 
-#  dplyr::select(logprice, 
-#         position, 
-#         dealer,
-#         origin_author,
-#         origin_cat,         
-#         school_pntg, 
-#         diff_origin,
-#         authorstyle,
-#         endbuyer,
-#         Interm,
-#         Shape,
-#         materialCat,
-#         engraved,
-#         prevcoll,
-#         figures,
-#         finished,
-#         lrgfont,
-#         Surface,
-#         othgenre,
-#         discauth,
-#         nfigures)
-  
-## first ols model to select some variables
-ols = lm(logprice ~ (dealer + 
-           school_pntg +
+
+## OLS
+```{r}
+ols = lm(logprice ~ 
+           (dealer +
+           school_pntg +            
            diff_origin + 
            artistliving + 
            authorstyle + 
@@ -274,9 +213,10 @@ ols = lm(logprice ~ (dealer +
            finished + 
            lrgfont + 
            landsALL + 
-           still_life)^2, data = train)
+           still_life)^2, data = paintings_train_3)
 summary(ols)
 ```
+
 
 ## AIC selection
 ```{r}
@@ -299,23 +239,6 @@ summary(BIC.ols)
 ## Lasso Selection
 ```{r}
 lasso = cv.glmnet(as.matrix(paintings_train_4[, -1]), alpha=1, paintings_train_4$logprice)
-```
-
-## BMA selection
-```{r}
-
-bma = bas.lm(logprice~ ., 
-             data=train, 
-             method="MCMC", 
-             prior = "JZS",
-             modelprior=beta.binomial(1,1),
-             n.models = 10000, MCMC.iterations=100000, 
-             thin = 10, initprobs="marg-eplogp",
-             force.heredity=FALSE)
-
-plot(bma, which=4)
-BPM = predict(bma, estimator = "BPM")
-variable.names(BPM)
 ```
 
 ## Clean Test Data
