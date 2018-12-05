@@ -23,6 +23,10 @@ The Code Book is in the file `paris_paintings.md` provides more information abou
 Using EDA and any numerical summaries get to know the data -  identify what you might consider the 10 best variables for predicting `logprice` using scatterplots with other variables represented using colors or symbols, scatterplot matrices or conditioning plots.  
 
 ```{r EDA}
+# initial look at data
+summary(paintings_train)
+
+# clean data set
 train_df = paintings_train %>% 
   dplyr::select(
          -sale,
@@ -89,15 +93,10 @@ train_df = paintings_train %>%
     pastorale = as.factor(pastorale),
     finished = as.factor(finished)
     )
-#%>%  
- # .[,c(8, 1:7, 9:39)] # reorder so that y is first column
 
-# imputation
+# plots
 
-
-
-# dimension reduction for large group of indicator variables at the end
-# do random forest and determine which variables are most important
+# corr matrix
 
 ```
 
@@ -114,22 +113,35 @@ summary(model1)
 
 ### LASSO - variable selection
 ```{r yeehaw}
-glmnet::glmnet(y = as.matrix(train_df$logprice), x = as.matrix(train_df[,-1]),
-               alpha = 0)
+x_mat = as.matrix(train_df[,-1])
+y_mat = as.matrix(train_df[,1])
+glmnet::glmnet(y = y_mat, x = x_mat, family = c("gaussian"), alpha = 1)
 ```
 
 ### BMA - variable selection
-```{r BMA}
-bas.lm.vars = BAS::bas.lm(logprice ~ ., data = train_df, 
+```{r BMA, cache = TRUE}
+# bas.lm.vars = BAS::bas.lm(logprice ~ ., data = train_df, 
+#                           prior = "ZS-null",
+#                           alpha = 1,
+#                           method = "MCMC")
+
+bas.lm.inter = BAS::bas.lm(logprice ~ .^2, data = train_df, 
                           prior = "ZS-null",
                           alpha = 1,
                           method = "MCMC")
+plot(bas.lm.inter, which = 4)
+lm.inclProb = data.frame(inclProb = sort(summary(bas.lm.inter)[,1], decreasing = TRUE)) 
 
+lm.inclProb %>%
+  filter(inclProb > 0.5)
 ```
 
 ### Diagnostics
 ```{r diagnosticfxns}
 # rmse
+rmse = function(y, y_hat){
+  
+}
 
 # coverage
 ```
