@@ -30,32 +30,86 @@ load("paintings_train.Rdata")
 load("paintings_test.Rdata")
 ```
 
+## Define RMSE function
+```{r}
+rmse = function(y1, y2){
+  sqrt(mean((y1-y2)^2))
+}
+```
+
 
 ## Manually Data Cleaning
 ```{r}
 ## Remove Intuitively Useless Variables
 paintings_train_1 = paintings_train %>% 
   dplyr::select(-sale,
-         -price,
-         -count,
-         -subject,
-         -authorstandard,
-         -author,
-         -winningbidder,
-         -other,
-         -Height_in,
-         -Width_in,
-         -Surface_Rect,
-         -Diam_in,
-         -Surface_Rnd,
-         -material,
-         -mat,
-         -lands_sc,
-         -lands_elem,
-         -lands_figs,
-         -lands_ment,
-         -lot)
+                -price,
+                -count,
+                -subject,
+                -authorstandard,
+                -author,
+                -winningbidder,
+                -other,
+                -Height_in,
+                -Width_in,
+                -Surface_Rect,
+                -Diam_in,
+                -Surface_Rnd,
+                -material,
+                -mat,
+                -lands_sc,
+                -lands_elem,
+                -lands_figs,
+                -lands_ment,
+                -lot)
 ```
+
+## TEST without "as.factor"
+```{r}
+## Change variable types $ impute missing values
+paintings_train_2 = paintings_train_1 %>% 
+  mutate(
+    #dealer = as.factor(dealer),
+    #origin_author = as.factor(origin_author),
+    #origin_cat = as.factor(origin_cat),
+    #school_pntg = as.factor(school_pntg),
+    authorstyle = ifelse(authorstyle %in% c("n/a", ""), 0, 1) %>% as.factor(),
+    winningbiddertype = ifelse(winningbiddertype %in% c("n/a", ""), "X", winningbiddertype),
+    endbuyer = ifelse(endbuyer %in% c("n/a", ""), "X", endbuyer),
+    type_intermed = ifelse(type_intermed %in% c("n/a", ""), "X", type_intermed),
+    materialCat = ifelse(materialCat %in% c("n/a", ""), "other", materialCat),
+    Shape = ifelse(Shape %in% c("round", "roude"), "round",
+                   ifelse(Shape %in% c("oval", "ovale"), "oval",
+                          ifelse(Shape == "squ_rect", "squ_rect", "other"))),
+    artistliving = as.factor(artistliving),
+    diff_origin = as.factor(diff_origin),
+    engraved = as.factor(engraved),
+    original = as.factor(original),
+    prevcoll = as.factor(prevcoll),
+    othartist = as.factor(othartist),
+    paired = as.factor(paired),
+    figures = as.factor(figures),
+    lrgfont = as.factor(lrgfont),
+    relig = as.factor(relig),
+    landsALL = as.factor(landsALL),
+    arch = as.factor(arch),
+    mytho = as.factor(mytho),
+    peasant = as.factor(peasant),
+    othgenre = as.factor(othgenre),
+    singlefig = as.factor(singlefig),
+    portrait = as.factor(portrait),
+    still_life = as.factor(still_life),
+    discauth = as.factor(discauth),
+    history = as.factor(history),
+    allegory = as.factor(allegory),
+    pastorale = as.factor(pastorale),
+    finished = as.factor(finished)
+  ) %>%  
+  .[,c(8, 1:7, 9:39)]
+
+str(paintings_train_2)
+```
+
 
 ```{r}
 ## Change variable types $ impute missing values
@@ -104,7 +158,6 @@ paintings_train_2 = paintings_train_1 %>%
 1. Grouped "lot"
 2. Missing value (space + n/a) all coded as "X"
 3. For categorical variables, levels with few observations (smaller than 10) are combines into a single level.
-4. For numeric variable (Shape only here), imputed missing values from a normal distribution centered at the median of the variable, with some small variance.
 
 
 ## Package Data Cleaning
@@ -117,6 +170,13 @@ paintings_train_3 = mice::complete(micetest) %>%
 
 ```
 
+## Split the data into train and test
+```{r}
+n = sample(1:1500, 1200, replace = FALSE)
+train = paintings_train_3[n,]
+test = paintings_train_3[-n,]
+```
+
 
 ## Part I: Simple Model 
 
@@ -126,13 +186,13 @@ Using EDA and any numerical summaries get to know the data -  identify what you 
 ```{r, fig.width=3, fig.height=3, message=FALSE, warning=FALSE}
 
 graph_numeric = paintings_train_3 %>% 
-  select(position,
+  dplyr::select(position,
          year,
          Surface,
          nfigures)
 
 graph_categorical = paintings_train_3 %>% 
-  select(-position,
+  dplyr::select(-position,
          -year,
          -Surface,
          -nfigures,
@@ -175,43 +235,57 @@ In the first model predict the auction price `price` using the transformation `l
 ## OLS variable selection
 ```{r model1, echo=TRUE, cache=TRUE, eval=FALSE}
 
-paintings_train_4 = paintings_train_3 %>% 
-  dplyr::select(logprice, 
-         position, 
-         dealer,
-         origin_author,
-         origin_cat,         
-         school_pntg, 
-         diff_origin,
-         authorstyle,
-         #endbuyer,
-         #Interm,
-         #Shape,
-         engraved,
-         prevcoll,
-         figures,
-         finished,
-         lrgfont,
-         Surface,
-         nfigures)
+#paintings_train_4 = paintings_train_3 %>% 
+#  dplyr::select(logprice, 
+#         position, 
+#         dealer,
+#         origin_author,
+#         origin_cat,         
+#         school_pntg, 
+#         diff_origin,
+#         authorstyle,
+#         endbuyer,
+#         Interm,
+#         Shape,
+#         materialCat,
+#         engraved,
+#         prevcoll,
+#         figures,
+#         finished,
+#         lrgfont,
+#         Surface,
+#         othgenre,
+#         discauth,
+#         nfigures)
   
 ## first ols model to select some variables
-ols.1 = lm(logprice ~ ., data=paintings_train_4)
-summary(ols.1)
+ols = lm(logprice ~ (dealer + 
+           school_pntg +
+           diff_origin + 
+           artistliving + 
+           authorstyle + 
+           Interm + 
+           Shape + 
+           Surface + 
+           engraved + 
+           endbuyer + 
+           prevcoll + 
+           paired + 
+           finished + 
+           lrgfont + 
+           landsALL + 
+           still_life)^2, data = train)
+summary(ols)
 ```
 
 ## AIC selection
 ```{r}
-paintings_train_5 = paintings_train_4 %>% 
-  dplyr::select(-origin_author,
-         -origin_cat,
-         -school_pntg)
-
-ols.2 = lm(logprice ~ (.)^2, data=paintings_train_4)
-summary(ols.2)
-
-AIC.ols = step(ols.2, k = 2)
+AIC.ols = step(ols, k = 2)
 summary(AIC.ols)
+
+AIC.fitted = predict(AIC.ols, newdata = test)
+rmse.AIC = rmse(test$logprice, AIC.fitted)
+
 ```
 
 ## BIC selection
@@ -231,7 +305,7 @@ lasso = cv.glmnet(as.matrix(paintings_train_4[, -1]), alpha=1, paintings_train_4
 ```{r}
 
 bma = bas.lm(logprice~ ., 
-             data=paintings_train_3, 
+             data=train, 
              method="MCMC", 
              prior = "JZS",
              modelprior=beta.binomial(1,1),
@@ -239,9 +313,7 @@ bma = bas.lm(logprice~ .,
              thin = 10, initprobs="marg-eplogp",
              force.heredity=FALSE)
 
-image(bma)
 plot(bma, which=4)
-
 BPM = predict(bma, estimator = "BPM")
 variable.names(BPM)
 ```
