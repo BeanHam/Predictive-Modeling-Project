@@ -1,7 +1,9 @@
 ---
 title: "Final Data Analysis Project"
-date:  "See Parts for Write-Up due Dates"
-output: pdf_document
+output:
+  html_document:
+    df_print: paged
+date: "See Parts for Write-Up due Dates"
 ---
 
 ```{r setup, include=FALSE}
@@ -10,11 +12,15 @@ knitr::opts_chunk$set(echo = FALSE)
 
 ### Read in Training Data
 ```{r message=FALSE, warning=FALSE, echo =FALSE}
-library(knitr)
-library(dplyr)
-library(ggplot2)
-library(GGally)
-library(mice)
+suppressWarnings(library(knitr)) 
+suppressWarnings(library(dplyr))
+suppressWarnings(library(ggplot2))
+suppressWarnings(library(GGally))
+suppressWarnings(library(mice))
+suppressWarnings(library(purrr))
+suppressWarnings(library(glmnet))
+suppressWarnings(library(MASS))
+suppressWarnings(library(BAS))
 ```
 
 
@@ -49,31 +55,24 @@ paintings_train_1 = paintings_train %>%
          -lands_figs,
          -lands_ment,
          -lot)
+```
 
-
+```{r}
 ## Change variable types $ impute missing values
 paintings_train_2 = paintings_train_1 %>% 
   mutate(
-    authorstyle = ifelse(authorstyle == "n/a", 0, 1) %>% as.factor(.),
-    winningbiddertype = ifelse(winningbiddertype == "", "X", winningbiddertype),
-    endbuyer = ifelse(endbuyer == "", "X", endbuyer),
-    #Interm = ifelse(is.na(Interm), "X", Interm), ## use mice to impute
-    type_intermed = ifelse(type_intermed == "", "X", type_intermed),
-    materialCat = ifelse(materialCat == "", "other", materialCat),
+    dealer = as.factor(dealer),
+    origin_author = as.factor(origin_author),
+    origin_cat = as.factor(origin_cat),
+    school_pntg = as.factor(school_pntg),
+    authorstyle = ifelse(authorstyle %in% c("n/a", ""), 0, 1) %>% as.factor(),
+    winningbiddertype = ifelse(winningbiddertype %in% c("n/a", ""), "X", winningbiddertype) %>% as.factor(),
+    endbuyer = ifelse(endbuyer %in% c("n/a", ""), "X", endbuyer) %>% as.factor(),
+    type_intermed = ifelse(type_intermed %in% c("n/a", ""), "X", type_intermed) %>% as.factor(),
+    materialCat = ifelse(materialCat %in% c("n/a", ""), "other", materialCat) %>% as.factor(),
     Shape = ifelse(Shape %in% c("round", "roude"), "round",
                    ifelse(Shape %in% c("oval", "ovale"), "oval",
-                          ifelse(Shape == "squ_rect", "squ_rect", "other"))),
-    
-    #lot = as.numeric(lot),
-    #lot = ifelse(is.na(lot), 5, 
-    #             ifelse((1 <= lot & lot <= 20), 1, 
-    #                    ifelse((21 <= lot & lot <= 50), 2, 
-    #                           ifelse((51 <= lot & lot <= 100), 3, 
-    #                                  ifelse((101 <= lot & lot <= 200), 4, 
-    #                                         ifelse(is.na(lot), 5, 5)))))) %>% as.factor(.),
-    
-    ##Surface = ifelse(!is.na(Surface), Surface, rnorm(1, median(Surface, na.rm = TRUE), 2)), ## use mice to impute
-    
+                          ifelse(Shape == "squ_rect", "squ_rect", "other"))) %>% as.factor(),
     artistliving = as.factor(artistliving),
     diff_origin = as.factor(diff_origin),
     engraved = as.factor(engraved),
@@ -100,14 +99,6 @@ paintings_train_2 = paintings_train_1 %>%
   ) %>%  
   .[,c(8, 1:7, 9:39)]
 
-#str(paintings_train_2)
-
-#paintings_train_1 %>% 
-#  group_by(Shape) %>% 
-#  summarise(sum = n()) %>% 
-#  arrange(desc(sum))
-  
-
 ```
 
 1. Grouped "lot"
@@ -117,17 +108,14 @@ paintings_train_2 = paintings_train_1 %>%
 
 
 ## Package Data Cleaning
-```{r}
-paintings_train_3 = paintings_train_2 %>% 
-  mutate(Interm = as.numeric(Interm))
+```{r message=FALSE, warning=FALSE}
 
-micetest = mice::mice(paintings_train_3)
-paintings_train_4 = mice::complete(output) %>% 
+micetest = mice::mice(paintings_train_2)
+
+paintings_train_3 = mice::complete(micetest) %>% 
   mutate(Interm = as.factor(Interm))
 
 ```
-
-
 
 
 ## Part I: Simple Model 
@@ -135,257 +123,201 @@ paintings_train_4 = mice::complete(output) %>%
 ### EDA
 
 Using EDA and any numerical summaries get to know the data -  identify what you might consider the 10 best variables for predicting `logprice` using scatterplots with other variables represented using colors or symbols, scatterplot matrices or conditioning plots.  
+```{r, fig.width=3, fig.height=3, message=FALSE, warning=FALSE}
 
-## First round of test
-```{r, fig.width=8, fig.height=5}
+graph_numeric = paintings_train_3 %>% 
+  select(position,
+         year,
+         Surface,
+         nfigures)
 
-## create ggpair plots
+graph_categorical = paintings_train_3 %>% 
+  select(-position,
+         -year,
+         -Surface,
+         -nfigures,
+         -logprice)
 
-p = ggpairs(paintings_train_2, columns = c(1:10), 
-            progress = FALSE, 
-            title = "Title", cardinality_threshold = 60) +
-  theme_bw(base_size = 10) + 
-  theme(axis.text = element_text(size = 6))
-
-plots = lapply(1:p$ncol, function(i) getPlot(p, i = 1, j = i)) 
-
-ggmatrix(
-    plots[2:3],
-    nrow = 1,
-    ncol = 2,
-    yAxisLabels = "logprice" ,
-    xAxisLabels = p$yAxisLabels[2:3]
-)
-
-ggmatrix(
-    plots[4:5],
-    nrow = 1,
-    ncol = 2,
-    yAxisLabels = "logprice" ,
-    xAxisLabels = p$yAxisLabels[4:5]
-)
-
-ggmatrix(
-    plots[6:7],
-    nrow = 1,
-    ncol = 2,
-    yAxisLabels = "logprice" ,
-    xAxisLabels = p$yAxisLabels[6:7]
-)
-
-ggmatrix(
-    plots[8:10],
-    nrow = 1,
-    ncol = 3,
-    yAxisLabels = "logprice" ,
-    xAxisLabels = p$yAxisLabels[8:10]
-)
-# Source: https://stackoverflow.com/questions/28652380/printing-a-single-row-from-a-ggpairs-plot
+## numeric
+for (i in 1:ncol(graph_numeric)){
+  plot(y = paintings_train_3$logprice, 
+       x = graph_numeric[,i],
+       ylab = "logprice",
+       xlab = names(graph_numeric)[i])
+}
 ```
 
-## Second round of test
-```{r, fig.width=5, fig.height=3}
+```{r}
+## categorical
+for (i in 1:ncol(graph_categorical)){
+  boxplot(paintings_train_3$logprice ~ graph_categorical[,i],
+          ylab = "logprice",
+          xlab = names(graph_categorical)[i])
+}
 
-## create ggpair plots
-
-p = ggpairs(paintings_train_2, columns = c(1,11:19), 
-            progress = FALSE, 
-            title = "Title", cardinality_threshold = 60) +
-  theme_bw(base_size = 10) + 
-  theme(axis.text = element_text(size = 6))
-
-plots = lapply(1:p$ncol, function(i) getPlot(p, i = 1, j = i)) 
-
-ggmatrix(
-    plots[2:3],
-    nrow = 1,
-    ncol = 2,
-    yAxisLabels = "logprice" ,
-    xAxisLabels = p$yAxisLabels[2:3]
-)
-
-ggmatrix(
-    plots[4:5],
-    nrow = 1,
-    ncol = 2,
-    yAxisLabels = "logprice" ,
-    xAxisLabels = p$yAxisLabels[4:5]
-)
-
-ggmatrix(
-    plots[6:7],
-    nrow = 1,
-    ncol = 2,
-    yAxisLabels = "logprice" ,
-    xAxisLabels = p$yAxisLabels[6:7]
-)
-
-ggmatrix(
-    plots[8:10],
-    nrow = 1,
-    ncol = 3,
-    yAxisLabels = "logprice" ,
-    xAxisLabels = p$yAxisLabels[8:10]
-)
-# Source: https://stackoverflow.com/questions/28652380/printing-a-single-row-from-a-ggpairs-plot
-```
-
-
-## Third round of test
-```{r, fig.width=8, fig.height=3}
-
-## create ggpair plots
-
-p = ggpairs(paintings_train_2, columns = c(1,20:39), 
-            progress = FALSE, 
-            title = "Title", cardinality_threshold = 60) +
-  theme_bw(base_size = 10) + 
-  theme(axis.text = element_text(size = 6))
-
-plots = lapply(1:p$ncol, function(i) getPlot(p, i = 1, j = i)) 
-
-ggmatrix(
-    plots[2:7],
-    nrow = 1,
-    ncol = 6,
-    yAxisLabels = "logprice" ,
-    xAxisLabels = p$yAxisLabels[2:7]
-)
-
-ggmatrix(
-    plots[8:13],
-    nrow = 1,
-    ncol = 6,
-    yAxisLabels = "logprice" ,
-    xAxisLabels = p$yAxisLabels[8:13]
-)
-
-ggmatrix(
-    plots[14:19],
-    nrow = 1,
-    ncol = 6,
-    yAxisLabels = "logprice" ,
-    xAxisLabels = p$yAxisLabels[14:19]
-)
-
-ggmatrix(
-    plots[20:25],
-    nrow = 1,
-    ncol = 6,
-    yAxisLabels = "logprice" ,
-    xAxisLabels = p$yAxisLabels[20:25]
-)
-# Source: https://stackoverflow.com/questions/28652380/printing-a-single-row-from-a-ggpairs-plot
-```
-
-
-\bftext
-From the scatter plots of logprice with respect to those chosen ten variables, we decided to include variables $position$, $school_pntg$, $endbuyer$, and $Surface$. The reason is that for continuous variables (such as $Surface$), there is a roughly linear positive relationship displayed. For categorical variables, the response variable $logprice$ show different levels given different categories, indicating that different categories do have impacts on the price.
-
-Repeat the same step for the rest variables (except for those that are obviously helpless, such as description, authorname etc.), we further picked up variables $origin_author$, $dealer$, $origin_cat$, $nfigures$, $figures, $and $prevcoll$.
-
-
-```{r, eval=FALSE}
-## mat test
-mat_count = 
-  paintings_train %>%
-  group_by(mat) %>% 
-  summarise(sum = n()) %>% 
-  filter(sum >= 10,
-         mat != "",
-         mat != "n/a")
-
-mat_test = 
-  paintings_train %>% 
-  select(logprice, mat) %>% 
-  filter(mat %in% count$mat)
-
-p = ggpairs(mat_test, columns = c(1:2), 
-            progress = FALSE, 
-            title = "Title", cardinality_threshold = 60) +
-  theme_bw(base_size = 10) + 
-  theme(axis.text = element_text(size = 6))
-
-p
 ```
 
 \bftext
-The variables $mat$ is intuitively important in determining the price. However, since it contains too many levels, making it almost impossible to generate a bar graph comparing all the levels at the same time, we filtered out $mat$ with less than 10 total observations. It is beneficial also because small sample sizes will make our estimates have large variance in the final model. 
+With the scatter plots between $logprice$ and other variables, we can roughly determine which variables can be put into the first model. For categorical variables, we want to check if the $logprice$ spans different ranges in different levels. For numeric variables, we want to check if there is a clear relationship between them and $logprice$.  
 
-By looking at the box plots, for different supporting materials there are slightly differences in the price (at least for "p" supporting material). Therefore, we consider adding $mat$ into the model (with the filter) and whether it is significant in determing the price.  
+For numeric variables, we see that $Surface$ and $nfigures$ seem to show some weak but positive relationship with $logprice$. Since there are several extremely large values in $position$ (potentially outliers), it is hard to see that real pattern between the majority of $positions$ values and $logprice$. But we'll keep it in the model first and using some other methods to check if it is important.
+
+For categorical variables, the following variables show some differences in $logprice$ at different levels (not considering the magnitude of the difference first): $dealer$, $origin_author$, $origin_cat$, $school_pntg$, $diff_origin$, $authorstyle$, $endbuyer$, $Interm$, $Shape$, $materialCat$, $engraved$, $prevcoll$, $figures$, $finished$, $Irgfont$, $othgenre$, $discauth$, and $still_life$.
+
+If we were to choose 10 best predictive variables for predicting, we would consider the magnitude of differences and relationships strength. The 10 variables we choose are: $Surface$, $origin_author$, $origin_cat$, $school_pntg$, $diff_origin$, $authorstyle$, $endbuyer$, $Interm$, $prevcoll$, $Irgfont$.
+
 
 ### Build your first model
 
 In the first model predict the auction price `price` using the transformation `logprice` using at least 10 and up to 20 predictors and any interactions to build a model using linear regression.  You may use stepwise model selection to simplify the model using AIC and/or BIC.  For reference, we will fit the null model to initialize the leaderboard, but replace model1 with your recommended model.
 
-## RMSE function
-```{r}
-rmse = function(obs, pred) { sqrt(sum((obs - pred)^2, na.rm = TRUE)/length(obs))}
-```
 
-## first round
-```{r model1, echo=TRUE, cache=TRUE}
+## OLS variable selection
+```{r model1, echo=TRUE, cache=TRUE, eval=FALSE}
 
-paintings_train_2 = paintings_train %>% 
-  select(logprice, 
+paintings_train_4 = paintings_train_3 %>% 
+  dplyr::select(logprice, 
          position, 
+         dealer,
+         origin_author,
+         origin_cat,         
          school_pntg, 
+         diff_origin,
+         authorstyle,
          endbuyer,
-         Surface,
-         origin_author,
-         dealer,
-         origin_cat,
-         nfigures,
-         figures,
+         Interm,
+         Shape,
+         engraved,
          prevcoll,
-         mat) %>% 
-  filter(mat %in% mat_count$mat,
-         origin_cat != "S")
+         figures,
+         finished,
+         lrgfont,
+         Surface,
+         nfigures)
   
-##model1 = lm(logprice ~ 1, data=paintings_train_2)
-ols = lm(logprice ~ (.)^2, data=paintings_train_2)
+## first ols model to select some variables
+ols.1 = lm(logprice ~ ., data=paintings_train_4)
+summary(ols.1)
+```
 
-## AIC
-AIC.ols <- step(ols, k = 2)
+## AIC selection
+```{r}
+paintings_train_5 = paintings_train_4 %>% 
+  dplyr::select(-origin_author,
+         -origin_cat,
+         -school_pntg)
+
+ols.2 = lm(logprice ~ (.)^2, data=paintings_train_5)
+AIC.ols <- step(ols.2, k = 2)
 summary(AIC.ols)
 
 ```
 
-\bftext
-After the first round AIC testing, we get rid of several variables, including $school_pntg$, $endbuyer$, $origin_cat$, and $figures$. They are not significant at their base level. In addition, almost all the iteractions involved them are not significant or are NAs. 
+## BIC selection
+```{r}
+n = nrow(paintings_train_5)
+BIC.ols <- step(ols.2, k = log(n))
+summary(BIC.ols)
+```
 
-## second round
+
+## Lasso Selection
+```{r}
+lasso = cv.glmnet(as.matrix(paintings_train_4[, -1]), alpha=1, paintings_train_4$logprice)
+```
+
+## BMA selection
 ```{r}
 
-paintings_train_2  = paintings_train %>% 
-  select(logprice, 
-         position, 
-         Surface,
-         origin_author,
-         dealer,
-         nfigures,
-         prevcoll,
-         mat) %>% 
-  filter(mat %in% mat_count$mat)
-  
-##model1 = lm(logprice ~ 1, data=paintings_train_2)
-ols = lm(logprice ~ (.)^2, data=paintings_train_2)
+bma = bas.lm(logprice~ ., 
+             data=paintings_train_3, 
+             method="MCMC", 
+             prior = "JZS",
+             modelprior=beta.binomial(1,1),
+             n.models = 10000, MCMC.iterations=100000, 
+             thin = 10, initprobs="marg-eplogp",
+             force.heredity=FALSE)
 
-## AIC
-AIC.ols <- step(ols, k = 2)
-summary(AIC.ols)
+image(bma)
+plot(bma, which=4)
 
-paintings_test2 = paintings_test %>% 
-  filter(mat %in% paintings_train_2$mat)
+BPM = predict(bma, estimator = "BPM")
+variable.names(BPM)
+```
+
+## Clean Test Data
+```{r}
+paintings_test_1 = paintings_test %>% 
+  dplyr::select(-sale,
+         -price,
+         -count,
+         -subject,
+         -authorstandard,
+         -author,
+         -winningbidder,
+         -other,
+         -Height_in,
+         -Width_in,
+         -Surface_Rect,
+         -Diam_in,
+         -Surface_Rnd,
+         -material,
+         -mat,
+         -lands_sc,
+         -lands_elem,
+         -lands_figs,
+         -lands_ment,
+         -lot)
+
+paintings_test_2 = paintings_test_1 %>% 
+  mutate(
+    dealer = as.factor(dealer),
+    origin_author = as.factor(origin_author),
+    origin_cat = as.factor(origin_cat),
+    school_pntg = as.factor(school_pntg),
+    Interm = as.factor(Interm),
+    authorstyle = ifelse(authorstyle %in% c("n/a", ""), 0, 1) %>% as.factor(),
+    winningbiddertype = ifelse(winningbiddertype %in% c("n/a", ""), "X", winningbiddertype) %>% as.factor(),
+    endbuyer = ifelse(endbuyer %in% c("n/a", ""), "X", endbuyer) %>% as.factor(),
+    type_intermed = ifelse(type_intermed %in% c("n/a", ""), "X", type_intermed) %>% as.factor(),
+    materialCat = ifelse(materialCat %in% c("n/a", ""), "other", materialCat) %>% as.factor(),
+    Shape = ifelse(Shape %in% c("round", "roude"), "round",
+                   ifelse(Shape %in% c("oval", "ovale"), "oval",
+                          ifelse(Shape == "squ_rect", "squ_rect", "other"))) %>% as.factor(),
+    artistliving = as.factor(artistliving),
+    diff_origin = as.factor(diff_origin),
+    engraved = as.factor(engraved),
+    original = as.factor(original),
+    prevcoll = as.factor(prevcoll),
+    othartist = as.factor(othartist),
+    paired = as.factor(paired),
+    figures = as.factor(figures),
+    lrgfont = as.factor(lrgfont),
+    relig = as.factor(relig),
+    landsALL = as.factor(landsALL),
+    arch = as.factor(arch),
+    mytho = as.factor(mytho),
+    peasant = as.factor(peasant),
+    othgenre = as.factor(othgenre),
+    singlefig = as.factor(singlefig),
+    portrait = as.factor(portrait),
+    still_life = as.factor(still_life),
+    discauth = as.factor(discauth),
+    history = as.factor(history),
+    allegory = as.factor(allegory),
+    pastorale = as.factor(pastorale),
+    finished = as.factor(finished)
+  )
 
 ```
 
 
 Save predictions and intervals.  
-```{r predict-model1, echo=FALSE}
+```{r predict-model1, echo=FALSE, eval=FALSE}
 predictions = as.data.frame(
-  exp(predict(AIC.ols, newdata=paintings_test2, 
-              interval = "pred")))
+  exp(predict(AIC.ols, newdata=paintings_test_2, 
+              interval = "pred"))) %>% 
+  na.omit()
 save(predictions, file="predict-test.Rdata")
 ```
 
@@ -435,7 +367,7 @@ Once your write up is submitted, your models will be evaluated on the following 
 In order to have a passing wercker badge, your file for predictions needs to be the same length as the test data, with three columns:  fitted values, lower CI and upper CI values in that order with names, *fit*, *lwr*, and *upr* respectively such as in the code chunk below. 
 
 Save predictions and intervals.  
-```{r predict-model-final, echo=FALSE, include=FALSE}
+```{r predict-model-final, echo=FALSE, include=FALSE, eval=FALSE}
 # change model1 or update as needed
 predictions = as.data.frame(
   exp(predict(model1, newdata=paintings_test, 
@@ -453,7 +385,7 @@ In this part you may go all out for constructing a best fitting model for predic
 
 Update your predictions using your complex model to provide point estimates and CI.
 
-```{r predict-model2, echo=FALSE}
+```{r predict-model2, echo=FALSE, eval=FALSE}
 # replace model1 with model2 here
 predictions = as.data.frame(
   exp(predict(model1, newdata=paintings_test, 
