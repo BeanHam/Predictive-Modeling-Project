@@ -12,15 +12,15 @@ knitr::opts_chunk$set(echo = FALSE)
 
 ### Read in Training Data
 ```{r message=FALSE, warning=FALSE, echo =FALSE}
-library(knitr)
-library(dplyr)
-library(ggplot2)
-library(GGally)
-library(mice)
-library(purrr)
-library(glmnet)
-library(MASS)
-library(BAS)
+suppressWarnings(library(knitr)) 
+suppressWarnings(library(dplyr))
+suppressWarnings(library(ggplot2))
+suppressWarnings(library(GGally))
+suppressWarnings(library(mice))
+suppressWarnings(library(purrr))
+suppressWarnings(library(glmnet))
+suppressWarnings(library(MASS))
+suppressWarnings(library(BAS))
 ```
 
 
