@@ -184,9 +184,9 @@ paintings_train_4 = paintings_train_3 %>%
          school_pntg, 
          diff_origin,
          authorstyle,
-         endbuyer,
-         Interm,
-         Shape,
+         #endbuyer,
+         #Interm,
+         #Shape,
          engraved,
          prevcoll,
          figures,
@@ -207,7 +207,7 @@ paintings_train_5 = paintings_train_4 %>%
          -origin_cat,
          -school_pntg)
 
-ols.2 = lm(logprice ~ (.)^2, data=paintings_train_5)
+ols.2 = lm(logprice ~ (.)^2, data=paintings_train_4)
 summary(ols.2)
 
 AIC.ols = step(ols.2, k = 2)
@@ -325,8 +325,9 @@ paintings_test_3 = mice::complete(micetest.2) %>%
 Save predictions and intervals.  
 ```{r predict-model1, echo=FALSE, eval=FALSE}
 predictions = as.data.frame(
-  exp(predict(AIC.ols, newdata=paintings_test_3, 
+  exp(predict(ols.2, newdata=paintings_test_3, 
               interval = "pred")))
+
 save(predictions, file="predict-test.Rdata")
 ```
 
