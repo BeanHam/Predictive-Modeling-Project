@@ -35,7 +35,7 @@ load("paintings_test.Rdata")
 ```{r}
 ## Remove Intuitively Useless Variables
 paintings_train_1 = paintings_train %>% 
-  select(-sale,
+  dplyr::select(-sale,
          -price,
          -count,
          -subject,
@@ -207,7 +207,7 @@ paintings_train_5 = paintings_train_4 %>%
          -origin_cat,
          -school_pntg)
 
-ols.2 = lm(logprice ~ ., data=paintings_train_5)
+ols.2 = lm(logprice ~ (.)^2, data=paintings_train_5)
 summary(ols.2)
 
 AIC.ols = step(ols.2, k = 2)
@@ -321,10 +321,11 @@ paintings_test_3 = mice::complete(micetest.2) %>%
 ```
 
 
+
 Save predictions and intervals.  
 ```{r predict-model1, echo=FALSE, eval=FALSE}
 predictions = as.data.frame(
-  exp(predict(ols.3, newdata=paintings_test_3, 
+  exp(predict(AIC.ols, newdata=paintings_test_3, 
               interval = "pred")))
 save(predictions, file="predict-test.Rdata")
 ```
