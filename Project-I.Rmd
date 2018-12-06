@@ -237,6 +237,11 @@ plot(ols.3)
 ols2.fitted = predict(ols.3, newdata = paintings_test)
 rmse.ols3 = rmse(paintings_test$logprice, ols2.fitted)
 
+## table
+table_of_coef = exp(cbind(coef(ols.3), confint(ols.3)))
+colnames(table_of_coef) = c("Coefficient", "2.5%", "97.5%")
+kable(table_of_coef)
+variable.names(ols.3)
 ```
 
 
@@ -318,7 +323,7 @@ paintings_test_2 = mice::complete(micetest.2) %>%
 ## Save predictions and intervals.  
 ```{r predict-model1, echo=FALSE, eval=FALSE}
 predictions = as.data.frame(
-  exp(predict(ols.3, newdata=paintings_test_2, 
+  exp(predict(ols.2, newdata=paintings_test_2, 
               interval = "pred")))
 
 save(predictions, file="predict-test.Rdata")
@@ -364,11 +369,9 @@ If we were to choose 10 best predictive variables for predicting, we would consi
 
 * Model selection: must include a discussion
 
-* Residual: must include residual plot(s) and a discussion.  
+* Residual: must include residual plot(s) and a discussion: After fitting the model, we created the four model diagnostic plots. The overall appearances of all four plots seem acceptable, with no obvious outlier or highly influential points shown. The model also does not violate the normality assumption. However, there are 2 cases that are dropped from the plots because they both have leverage of 1, indicating that they could potentially be the outlying cases of underpriced/overpriced paintings that we will later on investigate in, or have extreme price values. It is worth our attention to specifically look at these cases. 
 
-After fitting the model, we created the four model diagnostic plots. The overall appearances of all four plots seem acceptable, with no obvious outlier or highly influential points shown. The model also does not violate the normality assumption. However, there are 2 cases that are dropped from the plots because they both have leverage of 1, indicating that they could potentially be the outlying cases of underpriced/overpriced paintings that we will later on investigate in, or have extreme price values. It is worth our attention to specifically look at these cases. 
-
-* Variables: must include table of coefficients and CI
+* Variables: In the linear model we selected, we included Shape, school_pntg, dealer, Interm, Surface paired, finished, discauth, diff_origin, portrait, artistliving, endbuyer, authorstyle, lrgfont, still_life and prevcoll as our base predictors. Interactions selected by the model selection process and, for the sake of interpretation, those that are reasonable and interpretable are kept in the model as well. Since the response variable was orginally log-transformed, the exponentiated coefficients and confidence intervals are shown in the table.
 
 #4. Summary and Conclusions (10 points)
 
