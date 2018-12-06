@@ -219,12 +219,23 @@ summary(BIC.ols)
 ols.2 = lm(logprice ~ Shape + school_pntg + dealer*artistliving + dealer*Interm + dealer*Surface + dealer*paired + dealer*finished + dealer*discauth + diff_origin*Surface + diff_origin*portrait + artistliving*endbuyer + artistliving*authorstyle + Interm*Surface + Interm*lrgfont + Surface*lrgfont + Surface*still_life + Surface*discauth + prevcoll*finished + paired*lrgfont + paired*discauth + diff_origin*authorstyle + diff_origin*still_life + finished*discauth + lrgfont*discauth + artistliving*finished + authorstyle*prevcoll + Interm*portrait, data = paintings_train_2)
 
 summary(ols.2)
+par(mfrow = c(2,2))
 plot(ols.2)
+ols2.fitted = predict(ols.2, newdata = paintings_test)
+rmse.ols2 = rmse(paintings_test$logprice, ols2.fitted)
+```
 
+
+```{r}
 
 ols.3 = lm(logprice ~ Shape + school_pntg + dealer*Interm + dealer*Surface + dealer*paired + dealer*finished + dealer*discauth + diff_origin*Surface + diff_origin*portrait + artistliving*endbuyer + artistliving*authorstyle + Surface*lrgfont + Surface*still_life + Surface*discauth + prevcoll*finished + diff_origin*authorstyle + diff_origin*still_life + finished*discauth + lrgfont*discauth + artistliving*finished + Interm*portrait, data = paintings_train_2)
 
-ols.3 = lm(logprice ~ Shape + school_pntg + dealer*Interm + dealer*Surface + dealer*paired + dealer*finished + dealer*discauth + diff_origin*Surface + diff_origin*portrait + artistliving*endbuyer + artistliving*authorstyle + Surface*lrgfont + Surface*still_life + Surface*discauth + prevcoll*finished + diff_origin*authorstyle + diff_origin*still_life + finished*discauth + lrgfont*discauth + artistliving*finished + Interm*portrait, data = paintings_train_2)
+summary(ols.3)
+
+par(mfrow = c(2,2))
+plot(ols.3)
+ols2.fitted = predict(ols.3, newdata = paintings_test)
+rmse.ols3 = rmse(paintings_test$logprice, ols2.fitted)
 
 ```
 
@@ -307,7 +318,7 @@ paintings_test_2 = mice::complete(micetest.2) %>%
 ## Save predictions and intervals.  
 ```{r predict-model1, echo=FALSE, eval=FALSE}
 predictions = as.data.frame(
-  exp(predict(ols.2, newdata=paintings_test_2, 
+  exp(predict(ols.3, newdata=paintings_test_2, 
               interval = "pred")))
 
 save(predictions, file="predict-test.Rdata")
@@ -326,7 +337,7 @@ One of the main task and challenge is to narrow down the number of potential pre
 
 #2. Exploratory data analysis (10 points): must include three correctly labeled graphs and an explanation that highlight the most important features that went into your model building.
 
-#1 Data summary & cleaning
+#A). Data summary & cleaning
 To start with, we looked at the summary of the original trainig data. There are few numeric variables and a lot of binary variables. Some variables, such as $Interm$, $Surface$, $Height_in$ etc. have mising values, which need to be taken care of. The followings steps are how we cleaned the data: 
 
 a. The first step we did was to get rid of intuitivelly not helpful variables, including: $lot$, $sale$, $price$, $count$, $subject$, $authorstandard$, $author$, $winningbidder$, and $other$. The are not useful in predicting the response variable (such as names)
@@ -337,7 +348,7 @@ c. For those variables that have multiple levels, to be consistent with how the 
 
 d. The most important thing left was to deal with the missing values in $Surface$ and $Interm$. We used the package "mice", which uses the observed values in the dataset to impute the missing values, to address the problem. It prevents directly throwing away the missing values, which results in lossing a large amont of information for prediction.
 
-#2 Plots
+#B). Plots
 Then we analyed the relationship between those left features and the response variable. With the scatter plots, we can roughly determine which variables can be put into the initial model. For categorical variables, we want to check if the $logprice$ spans different ranges in different levels. For numeric variables, we want to check if there is a clear relationship between them and $logprice$.  
 
 For numeric variables, we see that $Surface$ and $nfigures$ seem to show some weak but positive relationship with $logprice$. Since there are several extremely large values in $position$ (potentially outliers), it is hard to see that real pattern between the majority of points and $logprice$. But we'll keep it in the model first.
@@ -359,15 +370,13 @@ After fitting the model, we created the four model diagnostic plots. The overall
 
 * Variables: must include table of coefficients and CI
 
-4. Summary and Conclusions (10 points)
+#4. Summary and Conclusions (10 points)
 
 What is the (median) price for the "baseline" category if there are categorical or dummy variables in the model (add CI's)?  (be sure to include units!) Highlight important findings and potential limitations of your model.  Does it appear that interactions are important?  What are the most important variables and/or interactions?  Provide interprations of how the most important variables influence the (median) price giving a range (CI).  Correct interpretation of coefficients for the log model desirable for full points.
 
 Provide recommendations for the art historian about features or combination of features to look for to find the most valuable paintings.
 
-_Points will be deducted for code chunks that should not be included, etc._
 
-*Upload write up  to Sakai any time before Dec 7th*
 
 ###  Evaluation on test data for Part I
 
