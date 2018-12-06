@@ -369,6 +369,16 @@ If we were to choose 10 best predictive variables for predicting, we would consi
 
 * Model selection: must include a discussion
 
+After completing the initial exploratory data analysis, methods including Bayesian Model Averaging and Stepwise Best Subset Selection using both AIC and BIC were used in order to assess more systematically which covariates were most important for predicting the logprice of paintings. While the number of relevant covariates was initially thinned by examining the data and determining which variables were best suited for modeling (e.g. via dimension reduction, elimination or recoding of categorical variables with too many levels or too few observations for a given level to be useful in estimating a coefficient), there still remained a large number of covariates from which to choose. The goal in using the above described methodology was to demonstrate among several methods, both frequentist and Bayesian, which covariates were routinely deemed to be the most important for modeling logprice. 
+
+The variable selection methods described above remain computationally intensive, particularly given the number of variables and potential two-way interactions that must be considered. In order to begin the analysis, Bayesian Model Averaging was used with MCMC in order to explore the space of possible models more efficiently. The covariates with the highest posterior inclusion probabilities, and their two-way interactions, were then considered using stepwise selection. The goal of this penalized selection process was to avoid overfitting and to deliver a model that was both interpretable and performed well in prediction.
+
+Ultimately, the following variables were selected using the above methods and were fit using OLS regression:
+
+**insert table with final model coeff here**
+
+Further discussion about positive results and potential issues with model selection method described above?
+
 * Residual: must include residual plot(s) and a discussion: After fitting the model, we created the four model diagnostic plots. The overall appearances of all four plots seem acceptable, with no obvious outlier or highly influential points shown. The model also does not violate the normality assumption. However, there are 2 cases that are dropped from the plots because they both have leverage of 1, indicating that they could potentially be the outlying cases of underpriced/overpriced paintings that we will later on investigate in, or have extreme price values. It is worth our attention to specifically look at these cases. 
 
 * Variables: In the linear model we selected, we included Shape, school_pntg, dealer, Interm, Surface paired, finished, discauth, diff_origin, portrait, artistliving, endbuyer, authorstyle, lrgfont, still_life and prevcoll as our base predictors. Interactions selected by the model selection process and, for the sake of interpretation, those that are reasonable and interpretable are kept in the model as well. Since the response variable was orginally log-transformed, the exponentiated coefficients and confidence intervals are shown in the table.
@@ -379,19 +389,4 @@ What is the (median) price for the "baseline" category if there are categorical 
 
 Provide recommendations for the art historian about features or combination of features to look for to find the most valuable paintings.
 
-
-
-###  Evaluation on test data for Part I
-
-Once your write up is submitted, your models will be evaluated on the following criteria based on predictions  on the test data (20 points): 
-
-* Bias:  Average (Yhat-Y)  positive values indicate the model tends to overestimate price (on average) while negative values indicate the model tends to underestimate price.
-
-* Maximum Deviation:  Max |Y-Yhat| -  identifies the worst prediction  made in the validation data set.
-
-* Mean Absolute Deviation:  Average |Y-Yhat| - the average error (regardless of sign).
-
-* Root Mean Square Error: Sqrt Average (Y-Yhat)^2
-
-* Coverage:  Average( lwr < Y < upr) 
 
