@@ -34,7 +34,6 @@ load("paintings_test.Rdata")
 ## Part I: Simple Model 
 
 ### EDA
-  
 ## Data Summary
 ```{r, echo=FALSE}
 t(summary(paintings_train))
@@ -141,7 +140,6 @@ for (i in 1:ncol(graph_numeric)){
        ylab = "logprice",
        xlab = names(graph_numeric)[i])
 }
-
 ```
 
 ```{r}
