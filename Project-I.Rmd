@@ -30,13 +30,6 @@ load("paintings_train.Rdata")
 load("paintings_test.Rdata")
 ```
 
-## Define RMSE function
-```{r}
-rmse = function(y1, y2){
-  sqrt(mean((y1-y2)^2))
-}
-```
-
 
 ## Manually Data Cleaning
 ```{r}
@@ -61,13 +54,8 @@ paintings_train_1 = paintings_train %>%
                 -lands_elem,
                 -lands_figs,
                 -lands_ment,
-                -lot)
-```
-
-
-```{r}
-## Change variable types $ impute missing values
-paintings_train_2 = paintings_train_1 %>% 
+                -lot,
+                -type_intermed) %>% 
   mutate(
     dealer = as.factor(dealer),
     origin_author = as.factor(origin_author),
@@ -76,7 +64,7 @@ paintings_train_2 = paintings_train_1 %>%
     authorstyle = ifelse(authorstyle %in% c("n/a", ""), 0, 1) %>% as.factor(),
     winningbiddertype = ifelse(winningbiddertype %in% c("n/a", ""), "X", winningbiddertype) %>% as.factor(),
     endbuyer = ifelse(endbuyer %in% c("n/a", ""), "X", endbuyer) %>% as.factor(),
-    type_intermed = ifelse(type_intermed %in% c("n/a", ""), "X", type_intermed) %>% as.factor(),
+    #type_intermed = ifelse(type_intermed %in% c("n/a", ""), "X", type_intermed) %>% as.factor(),
     materialCat = ifelse(materialCat %in% c("n/a", ""), "other", materialCat) %>% as.factor(),
     Shape = ifelse(Shape %in% c("round", "roude"), "round",
                    ifelse(Shape %in% c("oval", "ovale"), "oval",
@@ -105,21 +93,16 @@ paintings_train_2 = paintings_train_1 %>%
     pastorale = as.factor(pastorale),
     finished = as.factor(finished)
   ) %>%  
-  .[,c(8, 1:7, 9:39)]
+  .[,c(8, 1:7, 9:38)]
 
 ```
-
-1. Grouped "lot"
-2. Missing value (space + n/a) all coded as "X"
-3. For categorical variables, levels with few observations (smaller than 10) are combines into a single level.
-
 
 ## Package Data Cleaning
 ```{r message=FALSE, warning=FALSE}
 
-micetest = mice::mice(paintings_train_2)
+micetest = mice::mice(paintings_train_1)
 
-paintings_train_3 = mice::complete(micetest) %>% 
+paintings_train_2 = mice::complete(micetest) %>% 
   mutate(Interm = as.factor(Interm))
 
 ```
@@ -133,13 +116,13 @@ Using EDA and any numerical summaries get to know the data -  identify what you 
 ```{r, message=FALSE, warning=FALSE}
 
 par(mfrow = c(2, 2))
-graph_numeric = paintings_train_3 %>% 
+graph_numeric = paintings_train_2 %>% 
   dplyr::select(position,
          year,
          Surface,
          nfigures)
 
-graph_categorical = paintings_train_3 %>% 
+graph_categorical = paintings_train_2 %>% 
   dplyr::select(-position,
          -year,
          -Surface,
@@ -148,11 +131,12 @@ graph_categorical = paintings_train_3 %>%
 
 ## numeric
 for (i in 1:ncol(graph_numeric)){
-  plot(y = paintings_train_3$logprice, 
+  plot(y = paintings_train_2$logprice, 
        x = graph_numeric[,i],
        ylab = "logprice",
        xlab = names(graph_numeric)[i])
 }
+
 ```
 
 
@@ -160,7 +144,7 @@ for (i in 1:ncol(graph_numeric)){
 ## categorical
 par(mfrow = c(2,3))
 for (i in 1:ncol(graph_categorical)){
-  boxplot(paintings_train_3$logprice ~ graph_categorical[,i],
+  boxplot(paintings_train_2$logprice ~ graph_categorical[,i],
           ylab = "logprice",
           xlab = names(graph_categorical)[i])
 }
@@ -183,54 +167,57 @@ In the first model predict the auction price `price` using the transformation `l
 
 ## BMA variable selection
 ```{r}
-bma = bas.lm(logprice~ ., 
-             data=paintings_train_3, 
+## JZS prior
+bma1 = bas.lm(logprice~ ., 
+             data=paintings_train_2, 
              method="MCMC", 
              prior = "JZS",
-             modelprior=beta.binomial(1,1),
-             n.models = 10000, MCMC.iterations=100000, 
+             modelprior=uniform(),
+             n.models = 15000, MCMC.iterations=100000, 
+             thin = 10, initprobs="marg-eplogp",
+             force.heredity=FALSE)
+plot(bma1, which=4)
+BPM1 = predict(bma, estimator = "BPM")
+variable.names(BPM1)
+
+## g-prior
+bma2 = bas.lm(logprice~ ., 
+             data=paintings_train_2, 
+             method="MCMC", 
+             prior = "JZS",
+             modelprior=uniform(),
+             n.models = 15000, MCMC.iterations=100000, 
              thin = 10, initprobs="marg-eplogp",
              force.heredity=FALSE)
 
-plot(bma, which=4)
-BPM = predict(bma, estimator = "BPM")
-variable.names(BPM)
+plot(bma2, which=4)
+BPM2 = predict(bma2, estimator = "BPM")
+variable.names(BPM2)
 ```
+\bftext
+Use both JZS and g-prior to select variables. 
 
 
 ## OLS
 ```{r}
-ols = lm(logprice ~ 
-           (dealer +
-           school_pntg +            
-           diff_origin + 
-           artistliving + 
-           authorstyle + 
-           Interm + 
-           Shape + 
-           Surface + 
-           engraved + 
-           endbuyer + 
-           prevcoll + 
-           paired + 
-           finished + 
-           lrgfont + 
-           landsALL + 
-           still_life)^2, data = paintings_train_3)
-summary(ols)
+ols = lm(logprice ~ (dealer + school_pntg + diff_origin + artistliving + endbuyer + authorstyle + 
+                       Interm + Shape + Surface + engraved + prevcoll + paired + 
+                       finished + lrgfont + portrait + discauth + still_life)^2, 
+         data = paintings_train_2)
 plot(ols)
-
 ```
 
-
 ## AIC selection
-```{r}
+```{r cache=TRUE}
 AIC.ols = step(ols, k = 2)
 summary(AIC.ols)
 
-AIC.fitted = predict(AIC.ols, newdata = test)
-rmse.AIC = rmse(test$logprice, AIC.fitted)
+```
 
+## BIC selection
+```{r}
+n = nrow(paintings_train_2)
+BIC.ols = step(ols, k = log(n))
 ```
 
 
