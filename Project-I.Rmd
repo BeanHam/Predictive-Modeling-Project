@@ -218,6 +218,14 @@ summary(AIC.ols)
 ```{r}
 n = nrow(paintings_train_2)
 BIC.ols = step(ols, k = log(n))
+summary(BIC.ols)
+```
+
+## Combine AIC/BIC for OLS
+```{r}
+ols.2 = lm(logprice ~ dealer*artistliving + dealer*Interm + dealer*Surface + dealer*paired + dealer*finished + dealer*discauth + diff_origin*Surface + diff_origin*portrait + artistliving*endbuyer + artistliving*authorstyle + Interm*Surface + Interm*Surface + Surface*lrgfont + Surface*still_life + Surface*discauth + prevcoll*finished + paired*lrgfont + paired*discauth + diff_origin*authorstyle + diff_origin*still_life + finished*discauth + lrgfont*discauth, data = paintings_train_2)
+
+summary(ols.2)
 ```
 
 
@@ -243,9 +251,8 @@ paintings_test_1 = paintings_test %>%
          -lands_elem,
          -lands_figs,
          -lands_ment,
-         -lot)
-
-paintings_test_2 = paintings_test_1 %>% 
+         -lot,
+         -type_intermed) %>% 
   mutate(
     dealer = as.factor(dealer),
     origin_author = as.factor(origin_author),
@@ -254,7 +261,7 @@ paintings_test_2 = paintings_test_1 %>%
     authorstyle = ifelse(authorstyle %in% c("n/a", ""), 0, 1) %>% as.factor(),
     winningbiddertype = ifelse(winningbiddertype %in% c("n/a", ""), "X", winningbiddertype) %>% as.factor(),
     endbuyer = ifelse(endbuyer %in% c("n/a", ""), "X", endbuyer) %>% as.factor(),
-    type_intermed = ifelse(type_intermed %in% c("n/a", ""), "X", type_intermed) %>% as.factor(),
+    #type_intermed = ifelse(type_intermed %in% c("n/a", ""), "X", type_intermed) %>% as.factor(),
     materialCat = ifelse(materialCat %in% c("n/a", ""), "other", materialCat) %>% as.factor(),
     Shape = ifelse(Shape %in% c("round", "roude"), "round",
                    ifelse(Shape %in% c("oval", "ovale"), "oval",
@@ -289,9 +296,9 @@ paintings_test_2 = paintings_test_1 %>%
 
 ```{r}
 
-micetest.2 = mice::mice(paintings_test_2)
+micetest.2 = mice::mice(paintings_test_1)
 
-paintings_test_3 = mice::complete(micetest.2) %>% 
+paintings_test_2 = mice::complete(micetest.2) %>% 
   mutate(Interm = as.factor(Interm))
 
 ```
@@ -300,7 +307,7 @@ paintings_test_3 = mice::complete(micetest.2) %>%
 ## Save predictions and intervals.  
 ```{r predict-model1, echo=FALSE, eval=FALSE}
 predictions = as.data.frame(
-  exp(predict(AIC.ols, newdata=paintings_test_3, 
+  exp(predict(ols.2, newdata=paintings_test_2, 
               interval = "pred")))
 
 save(predictions, file="predict-test.Rdata")
