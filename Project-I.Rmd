@@ -177,7 +177,7 @@ bma1 = bas.lm(logprice~ .,
              thin = 10, initprobs="marg-eplogp",
              force.heredity=FALSE)
 plot(bma1, which=4)
-BPM1 = predict(bma, estimator = "BPM")
+BPM1 = predict(bma1, estimator = "BPM")
 variable.names(BPM1)
 
 ## g-prior
@@ -202,7 +202,7 @@ Use both JZS and g-prior to select variables.
 ```{r}
 ols = lm(logprice ~ (dealer + school_pntg + diff_origin + artistliving + endbuyer + authorstyle + 
                        Interm + Shape + Surface + engraved + prevcoll + paired + 
-                       finished + lrgfont + portrait + discauth + still_life + materialCat)^2, 
+                       finished + lrgfont + portrait + discauth + still_life)^2, 
          data = paintings_train_2)
 plot(ols)
 ```
@@ -223,7 +223,7 @@ summary(BIC.ols)
 
 ## Combine AIC/BIC for OLS
 ```{r}
-ols.2 = lm(logprice ~ dealer*artistliving + dealer*Interm + dealer*Surface + dealer*paired + dealer*finished + dealer*discauth + diff_origin*Surface + diff_origin*portrait + artistliving*endbuyer + artistliving*authorstyle + Interm*Surface + Interm*Surface + Surface*lrgfont + Surface*still_life + Surface*discauth + prevcoll*finished + paired*lrgfont + paired*discauth + diff_origin*authorstyle + diff_origin*still_life + finished*discauth + lrgfont*discauth, data = paintings_train_2)
+ols.2 = lm(logprice ~ Shape + dealer*artistliving + dealer*Interm + dealer*Surface + dealer*paired + dealer*finished + dealer*discauth + diff_origin*Surface + diff_origin*portrait + artistliving*endbuyer + artistliving*authorstyle + Interm*Surface + Interm*lrgfont + Surface*lrgfont + Surface*still_life + Surface*discauth + prevcoll*finished + paired*lrgfont + paired*discauth + diff_origin*authorstyle + diff_origin*still_life + finished*discauth + lrgfont*discauth + artistliving*finished + authorstyle*prevcoll + Interm*portrait, data = paintings_train_2)
 
 summary(ols.2)
 ```
