@@ -32,17 +32,18 @@ load("paintings_test.Rdata")
 
 
 ## Part I: Simple Model 
-### EDA
-Using EDA and any numerical summaries get to know the data -  identify what you might consider the 10 best variables for predicting `logprice` using scatterplots with other variables represented using colors or symbols, scatterplot matrices or conditioning plots.  
 
+### EDA
+  
 ## Data Summary
-```{r}
+```{r, echo=FALSE}
 t(summary(paintings_train))
 str(paintings_train)
+
 ```
 
 ## Manually Data Cleaning
-```{r}
+```{r, echo=FALSE}
 ## Remove Intuitively Useless Variables
 paintings_train_1 = paintings_train %>% 
   dplyr::select(-sale,
@@ -108,9 +109,7 @@ paintings_train_1 = paintings_train %>%
 
 ## Package Imputation
 ```{r message=FALSE, warning=FALSE}
-
 micetest = mice::mice(paintings_train_1)
-
 paintings_train_2 = mice::complete(micetest) %>% 
   mutate(Interm = as.factor(Interm))
 
@@ -187,9 +186,6 @@ plot(bma2, which=4)
 BPM2 = predict(bma2, estimator = "BPM")
 variable.names(BPM2)
 ```
-\bftext
-Use both JZS and g-prior to select variables. 
-
 
 ## OLS
 ```{r}
@@ -197,6 +193,7 @@ ols = lm(logprice ~ (dealer + school_pntg + diff_origin + artistliving + endbuye
                        Interm + Shape + Surface + engraved + prevcoll + paired + 
                        finished + lrgfont + portrait + discauth + still_life)^2, 
          data = paintings_train_2)
+summary(ols)
 plot(ols)
 ```
 
@@ -204,11 +201,10 @@ plot(ols)
 ```{r cache=TRUE}
 AIC.ols = step(ols, k = 2)
 summary(AIC.ols)
-
 ```
 
 ## BIC selection
-```{r}
+```{r, cache=TRUE}
 n = nrow(paintings_train_2)
 BIC.ols = step(ols, k = log(n))
 summary(BIC.ols)
@@ -216,29 +212,18 @@ summary(BIC.ols)
 
 ## Combine AIC/BIC for OLS
 ```{r}
-ols.2 = lm(logprice ~ Shape + school_pntg + dealer*artistliving + dealer*Interm + dealer*Surface + dealer*paired + dealer*finished + dealer*discauth + diff_origin*Surface + diff_origin*portrait + artistliving*endbuyer + artistliving*authorstyle + Interm*Surface + Interm*lrgfont + Surface*lrgfont + Surface*still_life + Surface*discauth + prevcoll*finished + paired*lrgfont + paired*discauth + diff_origin*authorstyle + diff_origin*still_life + finished*discauth + lrgfont*discauth + artistliving*finished + authorstyle*prevcoll + Interm*portrait, data = paintings_train_2)
+ols.2 = lm(logprice ~ Shape + school_pntg + dealer*Interm + dealer*Surface + dealer*paired + dealer*finished + dealer*discauth + diff_origin*Surface + diff_origin*portrait + artistliving*endbuyer + artistliving*authorstyle + Interm*Surface + Interm*lrgfont + Surface*lrgfont + Surface*still_life + Surface*discauth + prevcoll*finished + paired*lrgfont + paired*discauth + diff_origin*authorstyle + diff_origin*still_life + finished*discauth + lrgfont*discauth + artistliving*finished + Interm*portrait, data = paintings_train_2)
 
 summary(ols.2)
 par(mfrow = c(2,2))
 plot(ols.2)
-ols2.fitted = predict(ols.2, newdata = paintings_test)
-rmse.ols2 = rmse(paintings_test$logprice, ols2.fitted)
+
+## table
+table_of_coef = exp(cbind(coef(ols.2), confint(ols.2)))
+colnames(table_of_coef) = c("Coefficient", "2.5%", "97.5%")
+kable(table_of_coef)
+variable.names(ols.2)
 ```
-
-
-```{r}
-
-ols.3 = lm(logprice ~ Shape + school_pntg + dealer*Interm + dealer*Surface + dealer*paired + dealer*finished + dealer*discauth + diff_origin*Surface + diff_origin*portrait + artistliving*endbuyer + artistliving*authorstyle + Surface*lrgfont + Surface*still_life + Surface*discauth + prevcoll*finished + diff_origin*authorstyle + diff_origin*still_life + finished*discauth + lrgfont*discauth + artistliving*finished + Interm*portrait, data = paintings_train_2)
-
-summary(ols.3)
-
-par(mfrow = c(2,2))
-plot(ols.3)
-ols2.fitted = predict(ols.3, newdata = paintings_test)
-rmse.ols3 = rmse(paintings_test$logprice, ols2.fitted)
-
-```
-
 
 ## Clean Test Data
 ```{r}
@@ -318,14 +303,11 @@ paintings_test_2 = mice::complete(micetest.2) %>%
 ## Save predictions and intervals.  
 ```{r predict-model1, echo=FALSE, eval=FALSE}
 predictions = as.data.frame(
-  exp(predict(ols.3, newdata=paintings_test_2, 
+  exp(predict(ols.2, newdata=paintings_test_2, 
               interval = "pred")))
 
 save(predictions, file="predict-test.Rdata")
 ```
-
-
-### Part I Write up *Last day to submit is Dec 7 by 5; accepted until Dec 6 (5 points off if late)*
 
 Once you are satisfied with your model, provide a write up of your data analysis project in a new Rmd file/pdf file: `Part-I-Writeup.Rmd` by copying over salient parts of your R notebook. The written assignment consists of five parts:
 
@@ -374,11 +356,9 @@ Ultimately, the following variables were selected using the above methods and we
 
 Further discussion about positive results and potential issues with model selection method described above?
 
-* Residual: must include residual plot(s) and a discussion.  
+* Residual: must include residual plot(s) and a discussion: After fitting the model, we created the four model diagnostic plots. The overall appearances of all four plots seem acceptable, with no obvious outlier or highly influential points shown. The model also does not violate the normality assumption. However, there are 2 cases that are dropped from the plots because they both have leverage of 1, indicating that they could potentially be the outlying cases of underpriced/overpriced paintings that we will later on investigate in, or have extreme price values. It is worth our attention to specifically look at these cases. 
 
-After fitting the model, we created the four model diagnostic plots. The overall appearances of all four plots seem acceptable, with no obvious outlier or highly influential points shown. The model also does not violate the normality assumption. However, there are 2 cases that are dropped from the plots because they both have leverage of 1, indicating that they could potentially be the outlying cases of underpriced/overpriced paintings that we will later on investigate in, or have extreme price values. It is worth our attention to specifically look at these cases. 
-
-* Variables: must include table of coefficients and CI
+* Variables: In the linear model we selected, we included Shape, school_pntg, dealer, Interm, Surface paired, finished, discauth, diff_origin, portrait, artistliving, endbuyer, authorstyle, lrgfont, still_life and prevcoll as our base predictors. Interactions selected by the model selection process and, for the sake of interpretation, those that are reasonable and interpretable are kept in the model as well. Since the response variable was orginally log-transformed, the exponentiated coefficients and confidence intervals are shown in the table.
 
 #4. Summary and Conclusions (10 points)
 
@@ -386,19 +366,4 @@ What is the (median) price for the "baseline" category if there are categorical 
 
 Provide recommendations for the art historian about features or combination of features to look for to find the most valuable paintings.
 
-
-
-###  Evaluation on test data for Part I
-
-Once your write up is submitted, your models will be evaluated on the following criteria based on predictions  on the test data (20 points): 
-
-* Bias:  Average (Yhat-Y)  positive values indicate the model tends to overestimate price (on average) while negative values indicate the model tends to underestimate price.
-
-* Maximum Deviation:  Max |Y-Yhat| -  identifies the worst prediction  made in the validation data set.
-
-* Mean Absolute Deviation:  Average |Y-Yhat| - the average error (regardless of sign).
-
-* Root Mean Square Error: Sqrt Average (Y-Yhat)^2
-
-* Coverage:  Average( lwr < Y < upr) 
 
