@@ -1,7 +1,7 @@
 ---
-title: "Part I Write-up"
-team: "Team-10"
-author: "Jingyi Zhang, Jonathan Klus, Bin Han"
+title: "STA 521 Final Project Part I"
+author: "Team 10:  Bin Han, Jingyi Zhang, Jonathan Klus"
+date: "7 December 2018"
 output:
   pdf_document: default
   word_document: default
@@ -307,7 +307,7 @@ new = data.frame(
 ```
 
 
-a. The median price predicted is `exp(4.401232) = 81.55128` livres. The 95% confidence interval is (6.248, 1064.357) livres. The prediction interval is (2.532, 2626.714) livres.
+a. The median price predicted is `exp(4.401232) = 81.55128` livres. The 95% confidence interval is that the price of an auctioned painting will, on average, be on the interval (6.248, 1064.357) livres. The prediction interval is that the price of a specific painting will be on the interval (2.532, 2626.714) livres.
 ```{r}
 kable(exp(predict(ols.2, newdata = new, interval = "confidence")), 
       digits = 3, 
