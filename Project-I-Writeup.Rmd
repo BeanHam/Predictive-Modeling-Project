@@ -57,10 +57,18 @@ useless_var = paintings_train %>%
          other)
 ```
 
+
+
 ```{r useless_sum}
-str(useless_var)
 t(summary(useless_var))
+
+m = data.frame(
+  variables = colnames(useless_var),
+  unique_values = unlist(map(1:ncol(useless_var), function(i) length(unique(useless_var[,i]))))
+)
+kable(m, align = "c")
 ```
+
 
 a. In order to reduce the dimensionality of the problem, variables that were deemed intuitively not useful or colinear with other covariates were removed. This included: `lot`, `sale`, `price`, `count`, `subject`, `authorstandard`, `author`, `winningbidder`, and `other`. From the and structure and summary table, the `count` variable has all 1's; the `other` variable does not convey useful information; the other variables, such as `names` and `subjects`, are not useful in their present form for predicting the response variable. While its possible that some variables like `subjects` could be recoded using some underlying characteristic (and given some art expertise), we do not attempt to do this here.
 
