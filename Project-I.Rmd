@@ -1,6 +1,7 @@
 ---
 title: "Final Data Analysis Project"
 output:
+  pdf_document: default
   html_document:
     df_print: paged
 date: "See Parts for Write-Up due Dates"
