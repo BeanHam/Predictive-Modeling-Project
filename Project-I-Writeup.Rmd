@@ -249,7 +249,7 @@ After completing the initial exploratory data analysis, methods including Stepwi
 
 The variable selection methods described above remain computationally intensive, particularly given the number of variables and potential two-way interactions that must be considered. In order to begin the analysis, The two-way interactions were considered using stepwise selection (AIC & BIC). The goal of this penalized selection process was to avoid overfitting by reducing the number of covariates included in the final model and to deliver a model that was both interpretable and performed well in prediction. The results of the two methods were then compared, and interactions that were not intuitive were filtered out (e.g.  $artistling * endbuyer$).
 
-Ultimately, the following variables were selected using the above methods and were fit using OLS regression. The resulting $Adj-R^{2}$ was 0.6315. All the included covariates had estimable coefficients (i.e. there were no NAs, as the resulting design matrix was full rank). \par
+Ultimately, the following variables were selected using the above methods and were fit using OLS regression. The resulting $Adj-R^{2}$ was 0.6079. All the included covariates had estimable coefficients (i.e. there were no NAs, as the resulting design matrix was full rank). \par
 
 
 ```{r final_ols, message=FALSE, warning=FALSE}
@@ -265,8 +265,7 @@ par(mfrow = c(2,2))
 plot(ols.2)
 ```
 
-After fitting the model, we created the four model diagnostic plots. The overall appearances of all four plots appear acceptable, with no obvious outliers or highly influential points shown. The model also does not violate the normality assumption. The constant variance of residuals assumption seems to be satisfied. However, there are 2 cases that are dropped from the plots because they both have leverage of 1, indicating that they could potentially be the outlying cases of underpriced/overpriced paintings that we will later on investigate in, or have extreme price values. It is worth our attention to specifically look at these cases. 
-
+After fitting the model, we created the four model diagnostic plots. The overall appearances of all four plots appear acceptable, with no obvious outliers or highly influential points shown. The model also does not violate the normality assumption for residuals. The constant variance of residuals assumption appears to be satisfied, and there is no fanning or other obvious pattern in this plot. While there are a two points that are identified as outliers, they were not found to be influential.
 
 ## Variables
 ```{r}
@@ -275,7 +274,7 @@ colnames(table_of_coef) = c("Coefficient", "2.5%", "97.5%")
 kable(table_of_coef, digits = 3, align = "c")
 ```
 
-In the linear model we selected, we included `Shape`, `school_pntg`, `dealer`, `Interm`, `Surface`, `paired`, `finished`, `discauth`, `diff_origin`, `portrait`, `artistliving`, `endbuyer`, `authorstyle`, `lrgfont`, `still_life`, and `prevcoll` as our base predictors. Interactions selected by the model selection process and, for the sake of interpretation, those that are reasonable and interpretable are kept in the model as well. Since the response variable was orginally log-transformed, the exponentiated coefficients and confidence intervals are shown in the table.
+In the linear model we selected, we included `Shape`, `school_pntg`, `dealer`, `Interm`, `Surface`, `paired`, `finished`, `discauth`, `diff_origin`, `portrait`, `artistliving`, `endbuyer`, `authorstyle`, `lrgfont`, `still_life`, and `prevcoll` as our base predictors. Interactions selected by the model selection process and, for the sake of interpretation, those that are reasonable and interpretable are kept in the model as well. Since the response variable was orginally log-transformed, the model is interpreted in terms of exponentiated values below.
 
 ## 4. Summary and Conclusions
 ```{r, echo=FALSE}
@@ -316,39 +315,37 @@ kable(exp(predict(ols.2, newdata = new, interval = "prediction")),
 
 
 ## Interpretation
-From the final model we fitted, we found out that the following variables are statistically significant: `dealer`, `Interm`, `Surface`, `finished`, `discauth`, `diff_origin`, `portrait`, `endbuyer (E,U, X)`, `authorstyle`, `lrgfont`, and `prevcoll`. Some of the interactions are statistically important, such as: `dealer*Interm`, `dealer*paried`, `Interm*lrgfont`, `diff_origin*portrait` etc. We picked the most important ones and interpreted as following: 
+From the final model, the following variables are statistically significant: `dealer`, `Interm`, `Surface`, `finished`, `discauth`, `diff_origin`, `portrait`, `endbuyer (E,U, X)`, `authorstyle`, `lrgfont`, and `prevcoll`. Some of the interactions are statistically important, such as: `dealer*Interm`, `dealer*paried`, `Interm*lrgfont`, `diff_origin*portrait` etc. The most important covariates and interactions are interpreted as follows: 
 
-* dealer: the type of dealer that the auction went through significantly affects the price of the painting. For example, compared with dealer J, the average selling price from dealer L is `268.2% higher`. (Same interpretation for dealer P and R, with different coefficients)
+* dealer: the type of dealer that the auction went through significantly affects the price of the painting. For example, compared with dealer J, the average price from dealer L is `244.5% higher`. (Same interpretation for dealer P and R, with different coefficients)
 
-* Interm: when there is an intermediary involved in the transaction, the selling price is `123.9% lower` than when there is no intermediary involved. 
+* Interm: when there is an intermediary involved in the transaction, on average, the selling price is `99% lower` than when there is no intermediary involved. 
 
-* Surface: for every one squared inches increase in the painting surface, the selling price is expected to increase `8.779e-2%` livres.
+* Surface: for every one square inch increase in the painting surface, the selling price is, on average expected to increase `.045%`.
 
-* finished: if the painting is finished, the selling price on average is `116.5% higher` than when the painting is not finished.
+* finished: if the painting is noted for being highly finished, the selling price on average is `130.3% higher` than when the painting is not noted for being highly finished.
 
-* portrait: if the painting is described as a portrait, the selling price on average is `93.2% lower` times lower than when the painting is not described as a portrait. 
+* portrait: if the painting is described as a portrait, the selling price on average is `101.4% lower` times lower than when the painting is not described as a portrait. 
 
-* endbuyer: the type of endbuyer will significantly affect the level of price. For instance, compared with the endbuyer type B, the average selling price is `110.5% lower` when the endbuyer is type E. 
+* endbuyer: the type of endbuyer will significantly affect the level of price. For instance, compared with the endbuyer type B (buyer), the average selling price is `-108.1% lower` when the endbuyer is type E (expert). 
 
-* prevcoll: when the previous owner is mentioned, the average selling price is `152.6% higher` than when the previous owner is not mentioned.
+* prevcoll: when the previous owner is mentioned, the average selling price is `151.0% higher` than when the previous owner is not mentioned.
 
-* lrgfont: when the dealer devotes an additional paragraph, the average selling price is `178.4% higher` than when there is no additional paragraph.
+* lrgfont: when the dealer devotes an additional paragraph, the average selling price is `178.0% higher` than when there is no additional paragraph.
 
-* authorstyle: when the author's name is introduced, the average selling price is expected to be `177.5% lower` than when the author's name is not introduced.
+* authorstyle: when the author's name is introduced, the average selling price is expected to be `200.4% lower` than when the author's name is not introduced.
 
-* dealer&Interm interaction: when an intermediary is present, which the price of the auctioned painitngs differs significantly among different dealers. For instance, if the dealer is R and with an intermediary existed, the average selling price is `250.7% higher` than when the dealer is J with an intermediary.
+* dealer&Interm interaction: when an intermediary is present, which the price of the auctioned paintings differs significantly among different dealers. For instance, if the dealer is R and an intermediary is used, the average selling price is `225.0% higher` than when the dealer is J with an intermediary.
 
-* dealer&discauth: when the dealer engaged with authenticity of the painting, which type of dealer involves the auction has significant difference. For instance, if dealer R engages with authenticity, the average selling is `88.57 % lower` than the price when dealer J engages with authenticity.
-
-* finihsed*prevcoll: given that the painting is finished, when the previous owner is mentioned, the average price is expected to be `107.5% lower` than when the previous owner is not mentioned.
+* finished*prevcoll: given that the painting is noted for being highly finished, when the previous owner is mentioned, the average price is expected to be `110.4% lower` than when the previous owner is not mentioned.
 
 
 ## Recommendations
-In order to understand the auction prices of 18th century paintings and predict prices of paintings with certain features, we recommend historians focusing on the characteristics mentioned above associated with the painitings (just to mention some, not a complete list). For example, in order to find out highly priced pieces, they might want to look for dealer R, with an intermediary involved; they might want to look for dealer L with the painting sold as a pair with another one; they should look for larger, finished paintings; they should focus on paintings whose authors' names are mentioned during the auction. 
+In order to understand the auction prices of 18th century paintings and predict prices of paintings with certain features, we recommend historians focusing on the characteristics mentioned above associated with the painitings (just to mention some, not a complete list). For example, in order to find out highly priced pieces, they might want to look for transactions that involved dealer R, with an intermediary involved; they might want to look for dealer L with the painting sold as a pair with another one; they should look for larger, finished paintings; they should focus on paintings whose authors' names are mentioned during the auction. These features were among those that conferred the greatest percent increase in price over the base case in the model presented above.
 
 
 ## Limitations
-1. As mentioned in the data cleaning process, some of the variables have too many levels to be fitted and some levels have few observations that are not sufficient for estimating coefficients. Therefore, we grouped some of the variables, leading to the result that our model cannot investigate the true effects of those combined levels. If we had a larger data set, we could potentially release more levels.
+As mentioned in the data cleaning process, some of the variables have so many levels that fitting (and interpreting) such a model would be cumbersome. Many levels of the categorical variables included in this data set have few observations that are not sufficient for estimating coefficients. Therefore, we grouped some of the levels of variables, and grouped some variables via dimension reduction. This reduces the granularity of the analysis presented above, and risks introducing some bias, as the true model would probably be more granular and include the actual realization of each categorical predictor, not just an artbitrary grouping.
 
-2. As our goal is to find a balance between the prediction accuracy and interpretability, our model will not predict the response variable very accurately (as a sacrifice on interpretability).
+As our goal is to find a balance between the prediction accuracy and interpretability, our model may not predict the logprice response variable as accurately as other more advanced methods (which sacrifice interpretability in exchange for improved predictions). In the next phase of this project, we will attempt to fit other models which do just this, then compare the results to our initial work using an OLS regression model. 
 
