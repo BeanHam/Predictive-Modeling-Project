@@ -41,6 +41,29 @@ str(paintings_train)
 
 ```
 
+```{r, echo = FALSE}
+useless_var = paintings_train %>% 
+  dplyr::select(lot,
+         sale,
+         price,
+         count,
+         subject,
+         authorstandard,
+         author,
+         winningbidder,
+         other)
+```
+
+```{r}
+t(summary(useless_var))
+
+m = data.frame(
+  variables = colnames(useless_var),
+  unique_values = unlist(map(1:ncol(useless_var), function(i) length(unique(useless_var[,i]))))
+)
+kable(m, align = "c")
+```
+
 ## Manually Data Cleaning
 ```{r, echo=FALSE}
 ## Remove Intuitively Useless Variables
@@ -316,9 +339,9 @@ One of the main task and challenge is to narrow down the number of potential pre
 #2. Exploratory data analysis (10 points): must include three correctly labeled graphs and an explanation that highlight the most important features that went into your model building.
 
 ## A) Data summary & cleaning
-To start with, we looked at the summary of the original trainig data. There are few numeric variables and a. The first step we did was to get rid of intuitivelly useless variables to reduce dimention, including: `lot`, `sale`, `price`, `count`, `subject`, `authorstandard`, `author`, `winningbidder`, and `other`. From the and structure and summary table, the `count` variable has all 1's; the `other` variable does not convey useful information; the other variables, such as `names` and `subjects`, are not useful in predicting the response variable (such as names) 
+To start with, we looked at the summary of the original trainig data. There are few numeric variables and a lot of binary variables. Some variables, such as `Interm`, `Surface`, `Height_in` etc. have mising values, which need to be taken care of. The followings steps are how we cleaned the data: 
 
-a. The first step we did was to get rid of intuitivelly useless variables, including: `lot`, `sale`, `price`, `count`, `subject`, `authorstandard`, `author`, `winningbidder`, and `other`. The are not useful in predicting the response variable (such as names)
+a. The first step we did was to get rid of intuitivelly useless variables to reduce dimention, including: `lot`, `sale`, `price`, `count`, `subject`, `authorstandard`, `author`, `winningbidder`, and `other`. From the summary table, the `count` variable has all 1's; the `other` variable does not convey useful information; the other variables, such as `names` and `subjects`, are not useful in predicting the response variable (such as names). From the table of unique values we can see that some variables have thousands of unique values. Therefore, we can remove them in the first step.
 
 b. By further screening the variables, we found out that `Surface` and `Surface_Rnd`, `Surface_Rect` are corerlated, which are based on the value of `Height_in`, `Width_in`, and `Diam_in`. We decided to use `Surface` in our initial model. The same issue happened to `material`, `mat`, and `materialCat`. The latter one recodes the previous one. Therefore, we used `materialCat`. We applied the same strategy to keep `landsALL` and get rid of other variables related with landscape. 
 
