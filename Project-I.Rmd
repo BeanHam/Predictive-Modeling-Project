@@ -316,9 +316,9 @@ One of the main task and challenge is to narrow down the number of potential pre
 #2. Exploratory data analysis (10 points): must include three correctly labeled graphs and an explanation that highlight the most important features that went into your model building.
 
 ## A) Data summary & cleaning
-To start with, we looked at the summary of the original trainig data. There are few numeric variables and a lot of binary variables. Some variables, such as `Interm`, `Surface`, `Height_in` etc. have mising values, which need to be taken care of. The followings steps are how we cleaned the data: 
+To start with, we looked at the summary of the original trainig data. There are few numeric variables and a. The first step we did was to get rid of intuitivelly useless variables to reduce dimention, including: `lot`, `sale`, `price`, `count`, `subject`, `authorstandard`, `author`, `winningbidder`, and `other`. From the and structure and summary table, the `count` variable has all 1's; the `other` variable does not convey useful information; the other variables, such as `names` and `subjects`, are not useful in predicting the response variable (such as names) 
 
-a. The first step we did was to get rid of intuitivelly useless variables, including: `lot`, `sale`, `price`, `count`, `subject`, `authorstandard`, `author`, `winningbidder`, and `other. The are not useful in predicting the response variable (such as names)
+a. The first step we did was to get rid of intuitivelly useless variables, including: `lot`, `sale`, `price`, `count`, `subject`, `authorstandard`, `author`, `winningbidder`, and `other`. The are not useful in predicting the response variable (such as names)
 
 b. By further screening the variables, we found out that `Surface` and `Surface_Rnd`, `Surface_Rect` are corerlated, which are based on the value of `Height_in`, `Width_in`, and `Diam_in`. We decided to use `Surface` in our initial model. The same issue happened to `material`, `mat`, and `materialCat`. The latter one recodes the previous one. Therefore, we used `materialCat`. We applied the same strategy to keep `landsALL` and get rid of other variables related with landscape. 
 
@@ -362,20 +362,31 @@ In the linear model we selected, we included `Shape`, `school_pntg`, `dealer`, `
 
 The median price predicted is `exp(4.401232) = 81.55128` livres. The 95% confidence interval is (6.248, 1064.357) livres. The prediction interval is (2.532, 2626.714) livres.
 
-## Interpretation
 From the final model we fitted, we found out that the following variables are statistically significant: `dealer`, `Interm`, `Surface`, `finished`, `discauth`, `diff_origin`, `portrait`, `endbuyer (E,U, X)`, `authorstyle`, `lrgfont`, and `prevcoll`. Some of the interactions are statistically important, such as: `dealer*Interm`, `dealer*paried`, `Interm*lrgfont`, `diff_origin*portrait` etc. We picked the most important ones and interpreted as following: 
 
-* dealerL: compared with dealer J, the average selling price from dealer L is `exp(2.526) = 12.50339` times higher. (Same interpretation for dealer P and R, with different coefficients)
+* dealer: the type of dealer that the auction went through significantly affects the price of the painting. For example, compared with dealer J, the average selling price from dealer L is `268.2% higher`. (Same interpretation for dealer P and R, with different coefficients)
 
-* Interm: when there is an intermediary involved in the transaction, the selling price is `exp(-1.523) = 0.218` times lower than when there is no intermediary involved. 
+* Interm: when there is an intermediary involved in the transaction, the selling price is `123.9% lower` than when there is no intermediary involved. 
 
-* Surface: for every one squared inches increase in the painting surface, the selling price is expected to increase 8.779e-4 livres.
+* Surface: for every one squared inches increase in the painting surface, the selling price is expected to increase `8.779e-2%` livres.
 
-* finished: if the painting is finished, the selling price on average is `exp(1.087) = 2.965` times higher than when the painting is not finished.
+* finished: if the painting is finished, the selling price on average is `116.5% higher` than when the painting is not finished.
 
-* portrait: if the painting is described as a portrait, the selling price on average is `exp(-0.9246) = 0.3967` times lower than when the painting is not described as a portrait. 
+* portrait: if the painting is described as a portrait, the selling price on average is `93.2% lower` times lower than when the painting is not described as a portrait. 
 
-* dealerR&Interm1: if the dealer is R and with an intermediary existed, the average selling price is 1.854 times higher when the dealer is J with an intermediary.
+* endbuyer: the type of endbuyer will significantly affect the level of price. For instance, compared with the endbuyer type B, the average selling price is `110.5% lower` when the endbuyer is type E. 
+
+* prevcoll: when the previous owner is mentioned, the average selling price is `152.6% higher` than when the previous owner is not mentioned.
+
+* lrgfont: when the dealer devotes an additional paragraph, the average selling price is `178.4% higher` than when there is no additional paragraph.
+
+* authorstyle: when the author's name is introduced, the average selling price is expected to be `177.5% lower` than when the author's name is not introduced.
+
+* dealer&Interm interaction: when an intermediary is present, which the price of the auctioned painitngs differs significantly among different dealers. For instance, if the dealer is R and with an intermediary existed, the average selling price is `250.7% higher` than when the dealer is J with an intermediary.
+
+* dealer&discauth: when the dealer engaged with authenticity of the painting, which type of dealer involves the auction has significant difference. For instance, if dealer R engages with authenticity, the average selling is `88.57 % lower` than the price when dealer J engages with authenticity.
+
+* finihsed*prevcoll: given that the painting is finished, when the previous owner is mentioned, the average price is expected to be `107.5% lower` than when the previous owner is not mentioned.
 
 
 ## Recommendations
