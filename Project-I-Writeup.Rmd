@@ -1,7 +1,7 @@
 ---
 title: "Part-I-Writeup"
 team: Team-10
-Members: Rebecca Zhang, Jonathan Klus, Bin Han
+author: Jingyi Zhang, Jonathan Klus, Bin Han
 output: pdf_document
 ---
 ```{r setup, include=FALSE}
@@ -9,7 +9,7 @@ knitr::opts_chunk$set(echo = FALSE)
 ```
 
 
-```{r message=FALSE, warning=FALSE, echo =FALSE, include=FALSE}
+```{r message=FALSE, warning=FALSE, echo =FALSE}
 suppressWarnings(library(knitr)) 
 suppressWarnings(library(dplyr))
 suppressWarnings(library(ggplot2))
@@ -22,22 +22,22 @@ suppressWarnings(library(BAS))
 ```
 
 
-```{r read-data, echo=FALSE, include=FALSE}
+```{r read-data, echo=FALSE}
 load("paintings_train.Rdata")
 load("paintings_test.Rdata")
 ```
 
 ## 1. Introduction:
 
-In this study, we are looking at the auction prices of paintings in 18th century Paris. We wish to understand the factors that drive the prices of the paintings in our sample, and then be able to predict auction prices based on the characteristics of a new painting that was not included in our sample. After fitting an appropriate model, we may draw conclusions about whether specific paintings are either underpriced or overpriced based on the output of the model compared to the actual sale price.
+In this study, we are looking at the auction prices of paintings in 18th century Paris. Specifically, through the assistance of model built based on existing training data, we wish to understand the factors that drive the prices of the paintings, and then be able to predict auction prices based on characteristics of a certain painting. After fitting appropriate model, we also intend to detect specific paintings that are either underpriced or overpriced based on the selected model.
 
-The primary challenge in this task is to narrow down the number of potential predictors from 59 to less than 20 while maintaining high performance of the model (i.e. giving due attention to the bias-variance tradeoff and avoiding overfitting). But being able to explain the results and provide some recommendations to individuals without statistical background is equally important and challenging. Therefore, we aim to balance the predictive performance, simplicity, and interpretability of the final model in this case.
+One of the main task and challenge is to narrow down the number of potential predictors from 59 to less than 20 while maintaining a high performance of the model. But being able to explain the results and provide some recommendations to indivisuals without statistical background is equally important and challenging. Therefore, we aim at balancing the performance of model prediction, closeness to true model, simplicity, and interprebility.
 
 
 ## 2. Exploratory data analysis:
 
-### A) Data summary & cleaning
-To start with, we looked at the summary of the original trainig data. There are few numeric variables and a lot of binary variables. Some variables, such as `Interm`, `Surface`, `Height_in` etc. have missing values, which need to be taken care of. The followings steps are how we cleaned the data: 
+## A) Data summary & cleaning
+To start with, we looked at the summary of the original trainig data. There are few numeric variables and a lot of binary variables. Some variables, such as `Interm`, `Surface`, `Height_in` etc. have mising values, which need to be taken care of. The followings steps are how we cleaned the data: 
 
 a. The first step we did was to get rid of intuitivelly useless variables, including: `lot`, `sale`, `price`, `count`, `subject`, `authorstandard`, `author`, `winningbidder`, and `other. The are not useful in predicting the response variable (such as names)
 
@@ -112,13 +112,14 @@ paintings_train_1 = paintings_train %>%
 ```
 
 ```{r message=FALSE, warning=FALSE, echo = FALSE}
-micetest = mice::mice(paintings_train_1)
+micetest = mice::mice(paintings_train_1, printFlag = FALSE)
 paintings_train_2 = mice::complete(micetest) %>% 
   mutate(Interm = as.factor(Interm))
 
 ```
 
-# B). Plots
+
+## B). Plots
 Then we analyed the relationship between those left features and the response variable. With the scatter plots, we can roughly determine which variables can be put into the initial model. For categorical variables, we want to check if the `logprice` spans different ranges in different levels. For numeric variables, we want to check if there is a clear relationship between them and `logprice`.  
  
 ```{r, message=FALSE, warning=FALSE, echo=FALSE}
@@ -165,8 +166,7 @@ Since there are 33 categorical variables, we don't show the boxplots for all of 
 
 If we were to choose 10 best predictive variables for predicting, we would consider the magnitude of differences and the strength of relationships. The 10 variables we choose are: `Surface`, `dealer`, `school_pntg`, `diff_origin`, `authorstyle`, `endbuyer`, `Interm`, `prevcoll`, `engraved`, `Irgfont`.
 
-
-# 3. Development and assessment of an initial model
+## 3. Development and assessment of an initial model
 
 ```{r, echo = FALSE}
 ## JZS prior
@@ -185,7 +185,7 @@ BPM1 = predict(bma1, estimator = "BPM")
 bma2 = bas.lm(logprice~ ., 
              data=paintings_train_2, 
              method="MCMC", 
-             prior = "JZS",
+             prior = "g-prior",
              modelprior=uniform(),
              n.models = 15000, MCMC.iterations=100000, 
              thin = 10, initprobs="marg-eplogp",
@@ -197,24 +197,24 @@ BPM2 = predict(bma2, estimator = "BPM")
 
 ## Initial Model
 
+### JZS prior
 ```{r}
-## JZS prior
 variable.names(BPM1)
 ```
 
+### g-prior
 ```{r}
-## g-prior
 variable.names(BPM2)
 ```
 
 The EDA process gives us an initial idea of which variables to drop out to reduce the dimension, and which variables might be significant in explaining the variation in logprice. But before we built the initial model, we applied BMA, Bayesian Model Averaging, to systemetically choose which base variables that have higher posterior probabilities to be in the initial model. We experimented two modelpriors, "JZS" and "g-prior", which gave us two sets of variables listed above. Then we picked up the common ones from Best Predictive Model(BPM).
 
-Then we fit the linear regression model using the chosen features and all their possible interactions. From the summary table, the $R^{2} = 0.6928$, which is fairly high. But we realized that lots of estimated coefficients for interactions are NAs, indicating that some levels in those variables have too few observations to be estimated. Therefore, we need to further reduce the dimention through variable selection.
+Then we fit the linear regression model using the chosen features and all their possible interactions. From the summary table, the $R^{2} = 0.5828$, which is fairly high. But we realized that lots of estimated coefficients for interactions are NAs, indicating that some levels in those variables have too few observations to be estimated. Therefore, we need to further reduce the dimention through variable selection.
 
 ```{r warning=FALSE, message=FALSE}
-ols = lm(logprice ~ (dealer + school_pntg + diff_origin + artistliving + endbuyer + authorstyle + 
+ols = lm(logprice ~ dealer + school_pntg + diff_origin + artistliving + endbuyer + authorstyle + 
                        Interm + Shape + Surface + engraved + prevcoll + paired + 
-                       finished + lrgfont + portrait + discauth + still_life)^2, 
+                       finished + lrgfont + portrait + discauth + still_life, 
          data = paintings_train_2)
 summary(ols)
 ```
@@ -226,17 +226,17 @@ After completing the initial exploratory data analysis, methods including Stepwi
 
 The variable selection methods described above remain computationally intensive, particularly given the number of variables and potential two-way interactions that must be considered. In order to begin the analysis, The two-way interactions were considered using stepwise selection (AIC & BIC). The goal of this penalized selection process was to avoid overfitting and to deliver a model that was both interpretable and performed well in prediction. Then we compared the results from two methods and filtered out interactions that have NAs as coefficients, that are not significant, and that do not make sense to be interacted (such as $artistling * endbuyer$).
 
-Ultimately, the following variables were selected using the above methods and were fit using OLS regression. The $R^{2}$ reduces to 0.6269, which is expected. All the estimated coefficients do not contain NAs. \par
+Ultimately, the following variables were selected using the above methods and were fit using OLS regression. The $R^{2}$ reduces to 0.6315, which is expected. All the estimated coefficients do not contain NAs. \par
 
 
 ```{r, message=FALSE, warning=FALSE}
-ols.2 = lm(logprice ~ Shape + school_pntg + dealer*Interm + dealer*Surface + dealer*paired + dealer*finished + dealer*discauth + diff_origin*Surface + diff_origin*portrait + artistliving*endbuyer + artistliving*authorstyle + Interm*Surface + Interm*lrgfont + Surface*lrgfont + Surface*still_life + Surface*discauth + prevcoll*finished + paired*lrgfont + paired*discauth + diff_origin*authorstyle + diff_origin*still_life + finished*discauth + lrgfont*discauth + artistliving*finished + Interm*portrait, data = paintings_train_2)
+ols.2 = lm(logprice ~ Shape + school_pntg + dealer*Interm + dealer*Surface + dealer*paired + dealer*finished + dealer*discauth + diff_origin*Surface + diff_origin*portrait + artistliving*endbuyer + artistliving*authorstyle + Interm*Surface + Interm*lrgfont + Surface*lrgfont + Surface*still_life + Surface*discauth + prevcoll*finished + paired*lrgfont + paired*discauth + diff_origin*authorstyle + diff_origin*still_life + finished*discauth + lrgfont*discauth + artistliving*finished + Interm*portrait + dealer*artistliving + authorstyle*prevcoll, data = paintings_train_2)
 
 summary(ols.2)
 ```
 
 
-## Residuals 
+## Residuals & Diagnostics Analysis
 ```{r message=FALSE, warning=FALSE}
 par(mfrow = c(2,2))
 plot(ols.2)
@@ -255,10 +255,65 @@ kable(table_of_coef, digits = 3, align = "c")
 In the linear model we selected, we included `Shape`, `school_pntg`, `dealer`, `Interm`, `Surface`, `paired`, `finished`, `discauth`, `diff_origin`, `portrait`, `artistliving`, `endbuyer`, `authorstyle`, `lrgfont`, `still_life`, and `prevcoll` as our base predictors. Interactions selected by the model selection process and, for the sake of interpretation, those that are reasonable and interpretable are kept in the model as well. Since the response variable was orginally log-transformed, the exponentiated coefficients and confidence intervals are shown in the table.
 
 ## 4. Summary and Conclusions
+```{r, echo=FALSE}
+new = data.frame(
+  Shape = "other",
+  school_pntg = "A",
+  dealer = "J",
+  Interm = "0",
+  Surface = median(paintings_train_2$Surface),
+  paired = "0",
+  finished = "0",
+  discauth = "0",
+  diff_origin = "0",
+  portrait = "0",
+  artistliving = "0",
+  endbuyer = "B",
+  authorstyle = "0",
+  lrgfont = "0",
+  still_life = "0",
+  prevcoll = "0"
+)
+```
 
-What is the (median) price for the "baseline" category if there are categorical or dummy variables in the model (add CI's)?  (be sure to include units!) Highlight important findings and potential limitations of your model.  Does it appear that interactions are important?  What are the most important variables and/or interactions?  Provide interprations of how the most important variables influence the (median) price giving a range (CI).  Correct interpretation of coefficients for the log model desirable for full points.
 
-Provide recommendations for the art historian about features or combination of features to look for to find the most valuable paintings.
+a. The median price predicted is `exp(4.401232) = 81.55128` livres. The 95% confidence interval is (6.248, 1064.357) livres. The prediction interval is (2.532, 2626.714) livres.
+```{r}
+kable(exp(predict(ols.2, newdata = new, interval = "confidence")), 
+      digits = 3, 
+      align = "c",
+      caption = "95% Confidence Interval")
+      
+kable(exp(predict(ols.2, newdata = new, interval = "prediction")), 
+      digits = 3, 
+      align = "c",
+      caption = "95% Prediction Interval")
+
+```
 
 
+## Interpretation
+From the final model we fitted, we found out that the following variables are statistically significant: `dealer`, `Interm`, `Surface`, `finished`, `discauth`, `diff_origin`, `portrait`, `endbuyer (E,U, X)`, `authorstyle`, `lrgfont`, and `prevcoll`. Some of the interactions are statistically important, such as: `dealer*Interm`, `dealer*paried`, `Interm*lrgfont`, `diff_origin*portrait` etc. We picked the most important ones and interpreted as following: 
+
+* dealer: the type of dealer that the auction went through significantly affects the price of the painting. For example, compared with dealer J, the average selling price from dealer L is `exp(2.526) = 12.50339` times higher. (Same interpretation for dealer P and R, with different coefficients)
+
+* Interm: when there is an intermediary involved in the transaction, the selling price is `exp(-1.523) = 0.218` times lower than when there is no intermediary involved. 
+
+* Surface: for every one squared inches increase in the painting surface, the selling price is expected to increase 8.779e-4 livres.
+
+* finished: if the painting is finished, the selling price on average is `exp(1.087) = 2.965` times higher than when the painting is not finished.
+
+* portrait: if the painting is described as a portrait, the selling price on average is `exp(-0.9246) = 0.3967` times lower than when the painting is not described as a portrait. 
+
+* dealer&Interm interaction: when an intermediary is present, which the price of the auctioned painitngs differs significantly among different dealers. For instance, if the dealer is R and with an intermediary existed, the average selling price is 1.854 times higher when the dealer is J with an intermediary.
+
+
+## Recommendations
+In order to understand the auction prices of 18th century paintings and predict prices of paintings with certain features, we recommend historians focusing on the characteristics mentioned above associated with the painitings (just to mention some, not a complete list). For example, in order to find out highly priced pieces, they might want to look for dealer R, with an intermediary involved; they might want to look for dealer L with the painting sold as a pair with another one; they should look for larger, finished paintings; they should focus on paintings whose authors' names are mentioned during the auction. 
+
+
+## Limitations
+1. As mentioned in the data cleaning process, some of the variables have too many levels to be fitted and some levels have few observations that are not sufficient for estimating coefficients. Therefore, we grouped some of the variables, leading to the result that our model cannot investigate the true effects of those combined levels. If we had a larger data set, we could potentially release more levels.
+
+2. As our goal is to find a balance between the prediction accuracy and interpretability, our model will not predict the response variable very accurately (as a sacrifice on interpretability).
 
