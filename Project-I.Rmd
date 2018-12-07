@@ -233,7 +233,7 @@ summary(BIC.ols)
 
 ## Combine AIC/BIC for OLS
 ```{r}
-ols.2 = lm(logprice ~ Shape + school_pntg + dealer*Interm + dealer*Surface + dealer*paired + dealer*finished + dealer*discauth + diff_origin*Surface + diff_origin*portrait + artistliving*endbuyer + artistliving*authorstyle + Interm*Surface + Interm*lrgfont + Surface*lrgfont + Surface*still_life + Surface*discauth + prevcoll*finished + paired*lrgfont + paired*discauth + diff_origin*authorstyle + diff_origin*still_life + finished*discauth + lrgfont*discauth + artistliving*finished + Interm*portrait + dealer*artistliving + authorstyle*prevcoll, data = paintings_train_2)
+ols.2 = lm(logprice ~ Shape + school_pntg + dealer*Interm + dealer*Surface + dealer*paired + dealer*finished + diff_origin*Surface + diff_origin*portrait + artistliving*endbuyer + Interm*Surface + Interm*lrgfont + Surface*lrgfont + Surface*still_life + Surface*discauth + prevcoll*finished + paired*lrgfont + paired*discauth + diff_origin*authorstyle + diff_origin*still_life + finished*discauth + lrgfont*discauth + artistliving*finished + Interm*portrait + dealer*artistliving + authorstyle*prevcoll, data = paintings_train_2)
 
 summary(ols.2)
 par(mfrow = c(2,2))

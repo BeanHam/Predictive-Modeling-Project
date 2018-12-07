@@ -1,17 +1,18 @@
 ---
-title: "Part-I-Writeup"
+title: "Part I Write-up"
+team: "Team-10"
 author: "Jingyi Zhang, Jonathan Klus, Bin Han"
-team: Team-10
 output:
   pdf_document: default
   word_document: default
 ---
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 ```
 
 
-```{r message=FALSE, warning=FALSE, echo =FALSE}
+```{r load_packages, message=FALSE, warning=FALSE, echo =FALSE}
 suppressWarnings(library(knitr)) 
 suppressWarnings(library(dplyr))
 suppressWarnings(library(ggplot2))
@@ -24,7 +25,7 @@ suppressWarnings(library(BAS))
 ```
 
 
-```{r read-data, echo=FALSE}
+```{r read_data, echo=FALSE}
 set.seed(10)
 load("paintings_train.Rdata")
 load("paintings_test.Rdata")
@@ -32,18 +33,18 @@ load("paintings_test.Rdata")
 
 ## 1. Introduction:
 
-In this study, we are looking at the auction prices of paintings in 18th century Paris. Specifically, through the assistance of model built based on existing training data, we wish to understand the factors that drive the prices of the paintings, and then be able to predict auction prices based on characteristics of a certain painting. After fitting appropriate model, we also intend to detect specific paintings that are either underpriced or overpriced based on the selected model.
+In this study, the auction prices of paintings in 18th century Paris were examined. Specifically, we wish to understand the variables which affect the prices of the paintings, and then be able to predict auction prices based on characteristics of a certain painting. By fitting an appropriate model, we will also be creating a tool to help decide whether specific paintings that are either underpriced or overpriced given their realization of the covariates that were included in the model.
 
-One of the main task and challenge is to narrow down the number of potential predictors from 59 to less than 20 while maintaining a high performance of the model. But being able to explain the results and provide some recommendations to indivisuals without statistical background is equally important and challenging. Therefore, we aim at balancing the performance of model prediction, closeness to true model, simplicity, and interprebility.
+One of the main challenges in building this model is to narrow down the number of covariates from the 59 canadidates in the original data set to less than 20 in the final model. This must be done in such a way that an undue amount of bias is not introduced, and overfitting is avoided. The ability to explain the results and provide some recommendations to indivisuals without statistical background is equally important and challenging, since the primary audience for this analysis is intended to be art historians. The goal was therefore to balance predictive performance, model simplicity, and interprebility in order to create a pricing model for artwork in 18th century France.
 
 
 ## 2. Exploratory data analysis:
 
 ## A) Data summary & cleaning
 
-To start with, we looked at the summary of the original trainig data. There are few numeric variables and a lot of binary variables. Some variables, such as `Interm`, `Surface`, `Height_in` etc. have mising values, which need to be taken care of. The followings steps are how we cleaned the data: 
+The training set consists of a few numeric variables and many categorical variables. Some variables, such as `Interm`, `Surface`, `Height_in` etc. have mising values, which need to be imputed before any analysis can occur. Data cleaning proceeded using the following steps:
 
-```{r, echo = FALSE}
+```{r useless, echo = FALSE}
 useless_var = paintings_train %>% 
   dplyr::select(lot,
          sale,
@@ -56,7 +57,9 @@ useless_var = paintings_train %>%
          other)
 ```
 
-```{r}
+
+
+```{r useless_sum}
 t(summary(useless_var))
 
 m = data.frame(
@@ -66,16 +69,17 @@ m = data.frame(
 kable(m, align = "c")
 ```
 
-a. The first step we did was to get rid of intuitivelly useless variables to reduce dimention, including: `lot`, `sale`, `price`, `count`, `subject`, `authorstandard`, `author`, `winningbidder`, and `other`. From the summary table, the `count` variable has all 1's; the `other` variable does not convey useful information; the other variables, such as `names` and `subjects`, are not useful in predicting the response variable (such as names). From the table of unique values we can see that some variables have thousands of unique values. Therefore, we can remove them in the first step.
 
-b. By further screening the variables, we found out that `Surface` and `Surface_Rnd`, `Surface_Rect` are corerlated, which are based on the value of `Height_in`, `Width_in`, and `Diam_in`. We decided to use `Surface` in our initial model. The same issue happened to `material`, `mat`, and `materialCat`. The latter one recodes the previous one. Therefore, we used `materialCat`. We applied the same strategy to keep `landsALL` and get rid of other variables related with landscape. 
+a. In order to reduce the dimensionality of the problem, variables that were deemed intuitively not useful or colinear with other covariates were removed. This included: `lot`, `sale`, `price`, `count`, `subject`, `authorstandard`, `author`, `winningbidder`, and `other`. From the and structure and summary table, the `count` variable has all 1's; the `other` variable does not convey useful information; the other variables, such as `names` and `subjects`, are not useful in their present form for predicting the response variable. While its possible that some variables like `subjects` could be recoded using some underlying characteristic (and given some art expertise), we do not attempt to do this here.
 
-c. For those variables that have multiple levels, to be consistent with how the data was originally coded, we recoded the missing levels as "X", which stands for "no information". For `materialCat` and `Shape`, since there are so many levels, we grouped some levels with few observations together, coded as "other" group. The rest binary vairables are changed into factor.
+b. It was determined that `Surface` and `Surface_Rnd`, `Surface_Rect` are similar, based on the value of `Height_in`, `Width_in`, and `Diam_in`. We decided to use `Surface` in our initial model as it contained all information in the latter two surface area variables. A similar approach was used for variables `material`, `mat`, and `materialCat`. The latter one recodes the previous one, with fewer levels for simplicity (39 levels in the former versus just 5 in the latter). Therefore, we used `materialCat`. We applied the same strategy to keep `landsALL` and remove other `lands` indicator variables which contained little information and would therefore have been difficult to estimate an accurate coefficient. 
 
-d. Then we dealt with the missing values in `Surface` and `Interm`. We used the package "mice" to address this problem, which uses the observed values in the dataset to impute the missing values. It prevents directly throwing away the missing values, which results in lossing a large amont of information for prediction.
+c. This data contained a great deal of structurally missing values (i.e. missingness resulting from how the researchers coded the data, rather than truly unavailable or omitted information). For those variables that have multiple levels, to be consistent with how the data was originally coded, we recoded the missing levels as "X", which stands for either "other" or "no information" in the code book, depending upon the variable in question. For `materialCat` and `Shape`, since there are so many levels, we grouped some levels with few (<10) observations together, coded as the "other" group. The remaining binary vairables were converted into factors.
 
-```{r, echo=FALSE}
-## Remove Intuitively Useless Variables
+d. The remaining data issue was how to deal with missing values in the numeric continuous variable `Surface` and the binary variable `Interm`. The `mice` package (Multivariate Imputation by Chained Equations) was used to address this problem. It uses the observed values of other covariates in the dataset to create a model to impute the missing values. This method is superior to complete case analysis, which would result in losing an unacceptably large amount of data, as well as simpler imputation methods (i.e. imputing the mean of a given covariate to replace missing values).
+
+```{r data_clean, echo=FALSE}
+## Remove not useful & colinear variables
 paintings_train_1 = paintings_train %>% 
   dplyr::select(-sale,
                 -price,
@@ -138,7 +142,7 @@ paintings_train_1 = paintings_train %>%
 
 ```
 
-```{r message=FALSE, warning=FALSE, echo = FALSE}
+```{r imputation, message=FALSE, warning=FALSE, echo = FALSE}
 micetest = mice::mice(paintings_train_1, printFlag = FALSE)
 paintings_train_2 = mice::complete(micetest) %>% 
   mutate(Interm = as.factor(Interm))
@@ -147,9 +151,9 @@ paintings_train_2 = mice::complete(micetest) %>%
 
 
 ## B). Plots
-Then we analyed the relationship between those left features and the response variable. With the scatter plots, we can roughly determine which variables can be put into the initial model. For categorical variables, we want to check if the `logprice` spans different ranges in different levels. For numeric variables, we want to check if there is a clear relationship between them and `logprice`.  
+Following the data cleaning and dimension reduction described above, the potential covariates were plotted against the response variable, `logprice`. Scatter plots were used for numeric variables, and allow us to roughly determine which variables may be useful in the initial model. For categorical variables, we use boxplots to check if the range of `logprice` is observably different for each level of the variable. If so, it may be a good predictor. For numeric variables, we want to check if there is a clear linear relationship between the variable and `logprice`.  
  
-```{r, message=FALSE, warning=FALSE, echo=FALSE}
+```{r parse_df, message=FALSE, warning=FALSE, echo=FALSE}
 graph_numeric = paintings_train_2 %>% 
   dplyr::select(position,
          year,
@@ -164,7 +168,7 @@ graph_categorical = paintings_train_2 %>%
          -logprice)
 ```
 
-```{r}
+```{r num_eda}
 ## numeric
 par(mfrow = c(2, 2))
 for (i in 1:ncol(graph_numeric)){
@@ -176,9 +180,9 @@ for (i in 1:ncol(graph_numeric)){
 
 ```
 
-For numeric variables, we see that `Surface` and `nfigures` seem to show some weak but positive relationship with `logprice`. Since there are several extremely large values in `position` (potentially outliers), it is hard to see that real pattern between the majority of points and `logprice`. But we'll keep it in the model first.
+For numeric variables, we note that `Surface` and `nfigures` appear to have a weak but positive relationship with `logprice`. Since there are several extremely large values in `position` (potential outliers), it is difficult to know if there is a truly useful relationship here between the majority of points and `logprice`. But we will keep it in the initial model for now.
 
-```{r}
+```{r cat_eda}
 ## categorical
 par(mfrow = c(2,3))
 for (i in 1:12){
@@ -191,11 +195,11 @@ for (i in 1:12){
 
 Since there are 33 categorical variables, we don't show the boxplots for all of them. But applied the same method to check all the categorical variables. The following variables show some differences in `logprice` at different levels (not considering the magnitude of the difference at this time): `dealer`, `origin_author`, `origin_cat`, `school_pntg`, `diff_origin`, `authorstyle`, `endbuyer`, `Interm`, `Shape`, `materialCat`, `engraved`, `prevcoll`, `figures`, `finished`, `Irgfont`, `othgenre`, `discauth`, and `still_life`.
 
-If we were to choose 10 best predictive variables for predicting, we would consider the magnitude of differences and the strength of relationships. The 10 variables we choose are: `Surface`, `dealer`, `school_pntg`, `diff_origin`, `authorstyle`, `endbuyer`, `Interm`, `prevcoll`, `engraved`, `Irgfont`.
+If we were to choose 10 best variables for prediction at this point, we would consider the magnitude of differences and the strength of relationships. The 10 best variables based upon the above EDA are: `Surface`, `dealer`, `school_pntg`, `diff_origin`, `authorstyle`, `endbuyer`, `Interm`, `prevcoll`, `engraved`, `Irgfont`. They exhibit the strongest relationship with the response variable, `logprice`.
 
 ## 3. Development and assessment of an initial model
 
-```{r, echo = FALSE}
+```{r bma_init, echo = FALSE}
 ## JZS prior
 bma1 = bas.lm(logprice~ ., 
              data=paintings_train_2, 
@@ -225,20 +229,20 @@ BPM2 = predict(bma2, estimator = "BPM")
 ## Initial Model
 
 ### JZS prior
-```{r}
+```{r bma_1}
 variable.names(BPM1)
 ```
 
 ### g-prior
-```{r}
+```{r bma_2}
 variable.names(BPM2)
 ```
 
-The EDA process gives us an initial idea of which variables to drop out to reduce the dimension, and which variables might be significant in explaining the variation in logprice. But before we built the initial model, we applied BMA, Bayesian Model Averaging, to systemetically choose which base variables that have higher posterior probabilities to be in the initial model. We experimented two modelpriors, "JZS" and "g-prior", which gave us two sets of variables listed above. Then we picked up the common ones from Best Predictive Model(BPM).
+The EDA process gives us an initial idea of which variables to drop, and which variables might be important to explaining the variation in logprice. But before we built the initial model, we applied BMA ( Bayesian Model Averaging), to systematically choose which base variables have the highest posterior probabilities of being included in the initial model. We experimented with two priors, "JZS" and "g-prior", which gave us two sets of variables listed above. Then we picked up the common ones from the Best Predictive Model (BPM).
 
-Then we fit the linear regression model using the chosen features and all their possible interactions. From the summary table, the $R^{2} = 0.5828$, which is fairly high. But we realized that lots of estimated coefficients for interactions are NAs, indicating that some levels in those variables have too few observations to be estimated. Therefore, we need to further reduce the dimention through variable selection.
+An OLS regression model was then fit using the chosen features and all their possible interactions. From the summary table, the $R^{2} = 0.5828$, was okay, with approximately 58% of the variation in `logprice` explained by the model. But this model suffered from several potential issues, not least among which was that many coefficients could not be estimated (they returned NAs). Despite attempts during the first part of EDA at dimension reduction and removing colinear variables, it appears that multicolinearity is still very clearly an issue, as our design matrix is not full rank. Therefore, we need to again reduce the dimensionality of the model through further variable selection.
 
-```{r warning=FALSE, message=FALSE}
+```{r init_ols, warning=FALSE, message=FALSE}
 ols = lm(logprice ~ dealer + school_pntg + diff_origin + artistliving + endbuyer + authorstyle + 
                        Interm + Shape + Surface + engraved + prevcoll + paired + 
                        finished + lrgfont + portrait + discauth + still_life, 
@@ -249,15 +253,15 @@ summary(ols)
 
 ## Model Selection
 
-After completing the initial exploratory data analysis, methods including Stepwise Best Subset Selection using both AIC and BIC were used in order to assess more systematically which covariates were most important for predicting the logprice of paintings. While the number of relevant covariates was initially thinned by examining the data and determining which variables were best suited for modeling (e.g. via dimension reduction, elimination or recoding of categorical variables with too many levels or too few observations for a given level to be useful in estimating a coefficient), there still remained a large number of covariates from which to choose. The goal in using the above described methodology was to demonstrate among several methods, both frequentist and Bayesian, which covariates were routinely deemed to be the most important for modeling logprice. 
+After completing the initial exploratory data analysis, methods including Stepwise Selection using both AIC and BIC penalties were used in order to assess more systematically which covariates and interactions were most important for predicting the `logprice` of paintings. While the number of relevant covariates was initially thinned by examining the data and determining which variables were best suited for modeling (e.g. via dimension reduction, elimination or recoding of categorical variables with too many levels or too few observations for a given level to be useful in estimating a coefficient), there still remained a large number of covariates from which to choose. The goal in using the above described methodology was to demonstrate among several methods, both frequentist and Bayesian, which covariates were routinely deemed to be the most important for modeling logprice. 
 
-The variable selection methods described above remain computationally intensive, particularly given the number of variables and potential two-way interactions that must be considered. In order to begin the analysis, The two-way interactions were considered using stepwise selection (AIC & BIC). The goal of this penalized selection process was to avoid overfitting and to deliver a model that was both interpretable and performed well in prediction. Then we compared the results from two methods and filtered out interactions that have NAs as coefficients, that are not significant, and that do not make sense to be interacted (such as $artistling * endbuyer$).
+The variable selection methods described above remain computationally intensive, particularly given the number of variables and potential two-way interactions that must be considered. In order to begin the analysis, The two-way interactions were considered using stepwise selection (AIC & BIC). The goal of this penalized selection process was to avoid overfitting by reducing the number of covariates included in the final model and to deliver a model that was both interpretable and performed well in prediction. The results of the two methods were then compared, and interactions that were not intuitive were filtered out (e.g.  $artistling * endbuyer$).
 
-Ultimately, the following variables were selected using the above methods and were fit using OLS regression. The $R^{2}$ reduces to 0.6315, which is expected. All the estimated coefficients do not contain NAs. \par
+Ultimately, the following variables were selected using the above methods and were fit using OLS regression. The resulting $Adj-R^{2}$ was 0.6315. All the included covariates had estimable coefficients (i.e. there were no NAs, as the resulting design matrix was full rank). \par
 
 
-```{r, message=FALSE, warning=FALSE}
-ols.2 = lm(logprice ~ Shape + school_pntg + dealer*Interm + dealer*Surface + dealer*paired + dealer*finished + dealer*discauth + diff_origin*Surface + diff_origin*portrait + artistliving*endbuyer + artistliving*authorstyle + Interm*Surface + Interm*lrgfont + Surface*lrgfont + Surface*still_life + Surface*discauth + prevcoll*finished + paired*lrgfont + paired*discauth + diff_origin*authorstyle + diff_origin*still_life + finished*discauth + lrgfont*discauth + artistliving*finished + Interm*portrait + dealer*artistliving + authorstyle*prevcoll, data = paintings_train_2)
+```{r final_ols, message=FALSE, warning=FALSE}
+ols.2 = lm(logprice ~ Shape + school_pntg + dealer*Interm + dealer*Surface + dealer*paired + dealer*finished + diff_origin*Surface + diff_origin*portrait + artistliving*endbuyer + Interm*Surface + Interm*lrgfont + Surface*lrgfont + Surface*still_life + Surface*discauth + prevcoll*finished + paired*lrgfont + paired*discauth + diff_origin*authorstyle + diff_origin*still_life + finished*discauth + lrgfont*discauth + artistliving*finished + Interm*portrait + dealer*artistliving + authorstyle*prevcoll, data = paintings_train_2)
 
 summary(ols.2)
 ```
@@ -269,7 +273,7 @@ par(mfrow = c(2,2))
 plot(ols.2)
 ```
 
-After fitting the model, we created the four model diagnostic plots. The overall appearances of all four plots seem acceptable, with no obvious outlier or highly influential points shown. The model also does not violate the normality assumption. The constant variance of residuals assumption seems to be satisfied. However, there are 2 cases that are dropped from the plots because they both have leverage of 1, indicating that they could potentially be the outlying cases of underpriced/overpriced paintings that we will later on investigate in, or have extreme price values. It is worth our attention to specifically look at these cases. 
+After fitting the model, we created the four model diagnostic plots. The overall appearances of all four plots appear acceptable, with no obvious outliers or highly influential points shown. The model also does not violate the normality assumption. The constant variance of residuals assumption seems to be satisfied. However, there are 2 cases that are dropped from the plots because they both have leverage of 1, indicating that they could potentially be the outlying cases of underpriced/overpriced paintings that we will later on investigate in, or have extreme price values. It is worth our attention to specifically look at these cases. 
 
 
 ## Variables
