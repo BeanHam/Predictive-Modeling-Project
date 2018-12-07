@@ -1,8 +1,10 @@
 ---
 title: "Part-I-Writeup"
+author: "Jingyi Zhang, Jonathan Klus, Bin Han"
 team: Team-10
-author: Jingyi Zhang, Jonathan Klus, Bin Han
-output: pdf_document
+output:
+  pdf_document: default
+  word_document: default
 ---
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
