@@ -423,5 +423,3 @@ In order to find the most valuable paintings, we recommend historians focusing o
 2. As our goal is to find a balance between the prediction accuracy and interpretability, our model will not predict the response variable very accurately (as a sacrifice on interpretability).
 
 
-
-
