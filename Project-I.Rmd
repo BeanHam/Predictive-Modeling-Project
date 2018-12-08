@@ -421,3 +421,5 @@ As mentioned in the data cleaning process, some of the variables have so many le
 
 As our goal is to find a balance between the prediction accuracy and interpretability, our model may not predict the logprice response variable as accurately as other more advanced methods (which sacrifice interpretability in exchange for improved predictions). In the next phase of this project, we will attempt to fit other models which do just this, then compare the results to our initial work using an OLS regression model. 
 
+
+
