@@ -24,6 +24,7 @@ suppressWarnings(library(stringr))
 
 
 ```{r read-data, echo=FALSE}
+set.seed(10)
 load("paintings_train.Rdata")
 load("paintings_test.Rdata")
 ```
@@ -280,6 +281,17 @@ boosting = gbm(logprice ~.,
                n.trees = 5000,
                interaction.depth = 4)
 ```
+
+## BART
+```{r}
+library(BART)
+X = model.matrix(paintings_train_2)
+
+```
+
+
+
+
 
 ```{r}
 predictions = as.data.frame(
