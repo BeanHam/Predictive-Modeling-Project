@@ -263,6 +263,10 @@ paintings_test_2 = mice::complete(micetest) %>%
   mutate(Interm = as.factor(Interm))
 ```
 
+###############################################################
+###############################################################
+## Ridge Regression
+
 ## RF
 ```{r}
 library(randomForest)
@@ -285,17 +289,22 @@ boosting = gbm(logprice ~.,
 ## BART
 ```{r}
 library(BART)
-X = model.matrix(paintings_train_2)
+X = model.matrix(logprice ~., 
+                 data = paintings_train_2)[,-1]
+bart = pbart(x.train = X,
+             y.train = paintings_train_2$logprice,
+             printevery = 1000)
 
 ```
 
 
-
-
-
 ```{r}
 predictions = as.data.frame(
-  exp(predict(boosting, newdata = paintings_train_2, n.trees = 5000, type = "response")))
+  exp(predict(boosting,
+              newdata = paintings_train_2, 
+              n.trees = 5000, 
+              interval = "response")))
+colnames(predictions) = "fit"
 
 save(predictions, file="predict-test.Rdata")
 ```
