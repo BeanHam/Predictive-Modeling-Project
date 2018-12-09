@@ -118,7 +118,7 @@ load("paintings_test.Rdata")
      pastorale = as.factor(pastorale),
      finished = as.factor(finished)
    ) %>%  
-   .[,c(8, 1:7, 9:40)]
+   .[,c(8, 1:7, 9:38)]
 
 ```
 
@@ -215,7 +215,7 @@ paintings_test_1 = paintings_test %>%
      pastorale = as.factor(pastorale),
      finished = as.factor(finished)
    ) %>%  
-   .[,c(8, 1:7, 9:40)]
+   .[,c(8, 1:7, 9:38)]
 
 ```
 
