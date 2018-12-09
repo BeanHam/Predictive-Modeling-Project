@@ -226,69 +226,25 @@ paintings_test_2 = mice::complete(micetest) %>%
 ############## Modeling  ######################################
 ###############################################################
 
-## 1. Improve Linear regression
-
-```{r}
-## BMA Variable selection
-
-## JZS prior
-bma1 = bas.lm(logprice~ ., 
-             data=paintings_train_2, 
-             method="MCMC", 
-             prior = "JZS",
-             modelprior=uniform(),
-             MCMC.iterations=100000, 
-             thin = 10,
-             n.models = 15000,
-             force.heredity=TRUE)
-BPM1 = predict(bma1, estimator = "BPM")
-
-## g-prior
-bma2 = bas.lm(logprice~ ., 
-             data=paintings_train_2, 
-             alpha = nrow(paintings_train_2),
-             prior = "g-prior",
-             modelprior=uniform(),
-             method = "MCMC",
-             n.models = 15000)
-
-BPM2 = predict(bma2, estimator = "BPM")
-
-variable.names(BPM1)
-variable.names(BPM2)
-```
-
-
-```{r}
-## OLS
-ols = lm(logprice ~ (dealer + school_pntg + diff_origin + artistliving + endbuyer + authorstyle + 
-                       Interm + Shape + Surface + engraved + prevcoll + paired + finished + lrgfont 
-                     + portrait + discauth + still_life + year + author)^2, 
-         data = paintings_train_2)
-
-summary(ols)
-n = nrow(paintings_train_2)
-AIC = step(ols, k = 2)
-```
-
-
-```{r}
-ols.2 = lm(logprice ~ Shape + school_pntg + author + subject + year*author + year*dealer + year*artistliving + dealer*Interm + dealer*Surface + dealer*paired + dealer*finished + diff_origin*Surface + diff_origin*portrait + artistliving*endbuyer + Interm*Surface + Interm*lrgfont + Surface*lrgfont + Surface*still_life + Surface*discauth + prevcoll*finished + paired*lrgfont + paired*discauth + diff_origin*authorstyle + diff_origin*still_life + finished*discauth + lrgfont*discauth + artistliving*finished + Interm*portrait + dealer*artistliving + authorstyle*prevcoll, data = paintings_train_2)
-
-summary(ols.2)
-
-predictions = as.data.frame(
-  exp(predict(ols.2, 
-              newdata=paintings_test_2,
-              type = "response")))
-colnames(predictions) = "fit"
-save(predictions, file="predict-test.Rdata")
-```
-
 ## Negative Binomial
 ```{r}
-nb = glm.nb(price ~ .-logprice, 
-            data = paintings_train_2)
+library(MASS)
+nb.train = paintings_train_2 %>% dplyr::select(-logprice)
+nb.test = paintings_test_2 %>% dplyr::select(-logprice, -price)
+
+nb = glm.nb(price ~ Shape + school_pntg + author + subject + year*author + year*dealer + year*artistliving 
+            + dealer*Interm + dealer*Surface + dealer*paired + dealer*finished + diff_origin*Surface 
+            + diff_origin*portrait + artistliving*endbuyer + Interm*Surface + Interm*lrgfont 
+            + Surface*lrgfont + Surface*still_life + Surface*discauth + prevcoll*finished + paired*lrgfont 
+            + paired*discauth + diff_origin*authorstyle + diff_origin*still_life + finished*discauth 
+            + lrgfont*discauth + artistliving*finished + Interm*portrait + dealer*artistliving 
+            + authorstyle*prevcoll, data = nb.train)
+
+predictions = as.data.frame(
+  exp(predict(nb, newdata=nb.test)))
+
+colnames(predictions) = "fit"
+save(predictions, file="predict-test.Rdata")
 ```
 
 
