@@ -235,10 +235,32 @@ ols = lm(logprice~(dealer + school_pntg + diff_origin + artistliving + endbuyer 
                    + lrgfont + portrait + discauth + still_life + year + author + subject)^2,
          data = ols.train)
 AIC = step(ols, k = 2)
+
+options(max.print = 10000)
 summary(AIC)
+```
+
+```{r}
+ols.2 = lm(logprice ~ dealer*diff_origin + dealer*artistliving + dealer*authorstyle + dealer*Surface + dealer*discauth + dealer*year
+           + diff_origin*authorstyle + diff_origin*Interm + diff_origin*engraved + diff_origin*prevcoll + diff_origin*paired + diff_origin*lrgfont + diff_origin*subject 
+           + artistliving*authorstyle + artistliving*finished + artistliving*portrait + artistliving*year 
+           + endbuyer*Surface + endbuyer*paired + endbuyer*discauth + endbuyer*year
+           + authorstyle*prevcoll + authorstyle*finished + authorstyle*portrait
+           + Interm*paired + Interm*lrgfont + Interm*portrait + Interm*discauth
+           + Surface*paired + Surface*lrgfont + Surface*year + Surface*author + Surface*subject
+           + engraved* prevcoll + engraved*lrgfont + engraved*portrait
+           + prevcoll*finished
+           + paired*finished + paired*lrgfont + paired*discauth + paired*year + paired*author + paired*subject
+           + lrgfont*portrait + lrgfont*discauth
+           + discauth*year
+           + year*subject, 
+           data = ols.train)
+
+summary(ols.2)
 
 predictions = as.data.frame(
-  exp(predict(AIC, newdata=ols.test)))
+  exp(predict(ols.2, newdata=ols.test, type = "response")))
+
 colnames(predictions) = "fit"
 save(predictions, file="predict-test.Rdata")
 
