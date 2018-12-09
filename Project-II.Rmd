@@ -268,7 +268,7 @@ ols = lm(logprice ~ (dealer + school_pntg + diff_origin + artistliving + endbuye
 
 summary(ols)
 n = nrow(paintings_train_2)
-BIC = step(ols, k = log(n))
+AIC = step(ols, k = 2)
 ```
 
 
@@ -295,10 +295,20 @@ nb = glm.nb(price ~ .-logprice,
 ## RF
 ```{r}
 library(randomForest)
-rf = randomForest(logprice ~ . -price,
-                       data = paintings_train_2, 
-                       importance = TRUE)
-rf.pred = predict(rf, newdata = paintings_test_2)
+
+rf.train = paintings_train_2 %>% dplyr::select(-price)
+rf.test = paintings_test_2 %>% dplyr::select(-price, -logprice)
+
+rf = randomForest(logprice ~ .,
+                  data = rf.train,
+                  mtry = 6,
+                  importance = TRUE)
+
+predictions = as.data.frame(
+  exp(predict(rf, 
+              newdata=rf.test)))
+colnames(predictions) = "fit"
+save(predictions, file="predict-test.Rdata")
 ```
 
 ## boosting
