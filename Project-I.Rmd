@@ -93,7 +93,7 @@ paintings_train_1 = paintings_train %>%
     dealer = as.factor(dealer),
     origin_author = as.factor(origin_author),
     origin_cat = as.factor(origin_cat),
-    school_pntg = as.factor(school_pntg),
+    school_pntg = ifelse(school_pntg %in% c("A", "X"), "X", school_pntg) %>% as.factor(.),
     authorstyle = ifelse(authorstyle %in% c("n/a", ""), 0, 1) %>% as.factor(),
     winningbiddertype = ifelse(winningbiddertype %in% c("n/a", ""), "X", winningbiddertype) %>% as.factor(),
     endbuyer = ifelse(endbuyer %in% c("n/a", ""), "X", endbuyer) %>% as.factor(),
@@ -213,7 +213,6 @@ ols = lm(logprice ~ (dealer + school_pntg + diff_origin + artistliving + endbuye
                        Interm + Shape + Surface + engraved + prevcoll + paired + 
                        finished + lrgfont + portrait + discauth + still_life)^2, 
          data = paintings_train_2)
-paintings_train_2 %>% group_by(endbuyer) %>% summarise(n())
 
 summary(ols)
 plot(ols)
@@ -421,6 +420,5 @@ In order to understand the auction prices of 18th century paintings and predict 
 As mentioned in the data cleaning process, some of the variables have so many levels that fitting (and interpreting) such a model would be cumbersome. Many levels of the categorical variables included in this data set have few observations that are not sufficient for estimating coefficients. Therefore, we grouped some of the levels of variables, and grouped some variables via dimension reduction. This reduces the granularity of the analysis presented above, and risks introducing some bias, as the true model would probably be more granular and include the actual realization of each categorical predictor, not just an artbitrary grouping.
 
 As our goal is to find a balance between the prediction accuracy and interpretability, our model may not predict the logprice response variable as accurately as other more advanced methods (which sacrifice interpretability in exchange for improved predictions). In the next phase of this project, we will attempt to fit other models which do just this, then compare the results to our initial work using an OLS regression model. 
-
 
 
