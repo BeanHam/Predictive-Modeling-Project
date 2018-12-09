@@ -213,6 +213,8 @@ ols = lm(logprice ~ (dealer + school_pntg + diff_origin + artistliving + endbuye
                        Interm + Shape + Surface + engraved + prevcoll + paired + 
                        finished + lrgfont + portrait + discauth + still_life)^2, 
          data = paintings_train_2)
+paintings_train_2 %>% group_by(endbuyer) %>% summarise(n())
+
 summary(ols)
 plot(ols)
 ```
