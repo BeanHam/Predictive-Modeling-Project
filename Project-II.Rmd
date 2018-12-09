@@ -27,12 +27,6 @@ suppressWarnings(library(stringr))
 set.seed(10)
 load("paintings_train.Rdata")
 load("paintings_test.Rdata")
-
-#paris_paintings <- read.csv("~/STA521 - Fall2018/Final Project/paris_paintings.csv", #comment.char="#", stringsAsFactors=FALSE)
-
-#length(unique(paris_paintings$subject, paris_paintings$dealer))
-#
-#unique(paris_paintings, margin = 1)
 ```
 
 ## Manually Data Cleaning
@@ -299,7 +293,7 @@ ols.2 = lm(logprice ~ Shape + school_pntg
 ```{r}
 ##
 
-ols.2 = lm(logprice ~ Shape + school_pntg + prevcoll
+ols.2 = lm(logprice ~ Shape + school_pntg
            + dealer*finished + dealer*year + dealer*Interm + dealer*paired + dealer*artistliving
            + diff_origin*subject + diff_origin*Surface + diff_origin*portrait + diff_origin*authorstyle + diff_origin*still_life
            + artistliving*year + artistliving*endbuyer + artistliving*finished
@@ -308,14 +302,14 @@ ols.2 = lm(logprice ~ Shape + school_pntg + prevcoll
            + paired*lrgfont + paired*discauth + paired*author + paired*subject
            + finished*discauth
            + lrgfont*discauth, 
-           data = paintings_train_2)
-summary(ols.2)
-
-predictions = as.data.frame(
-  exp(predict(ols.2, newdata=paintings_test_2, type = "response")))
-
-colnames(predictions) = "fit"
-save(predictions, file="predict-test.Rdata")
+            data = paintings_train_2)
+ summary(ols.2)
+ 
+ predictions = as.data.frame(
+   exp(predict(ols.2, newdata=paintings_test_2, type = "response")))
+ 
+ colnames(predictions) = "fit"
+ save(predictions, file="predict-test.Rdata")
 
 ```
 
