@@ -299,7 +299,7 @@ ols.2 = lm(logprice ~ Shape + school_pntg
 ```{r}
 ##
 
-ols.2 = lm(logprice ~ Shape + school_pntg + prevcoll 
+ols.2 = lm(logprice ~ Shape + school_pntg + prevcoll + authorlevel
            + dealer*finished + dealer*year + dealer*Interm + dealer*paired + dealer*artistliving
            + diff_origin*subject + diff_origin*Surface + diff_origin*portrait + diff_origin*authorstyle + diff_origin*still_life
            + artistliving*year + artistliving*endbuyer + artistliving*finished
@@ -388,7 +388,7 @@ library(randomForest)
 rf.train = paintings_train_2 %>% dplyr::select(-price)
 rf.test = paintings_test_2 %>% dplyr::select(-logprice, -price)
 
-rf = randomForest(logprice ~ .,
+rf = randomForest(logprice ~ . -author,
                   data = rf.train,
                   importance = TRUE)
 
