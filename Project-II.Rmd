@@ -84,7 +84,7 @@ paintings_train_1 = paintings_train %>%
     dealer = as.factor(dealer),
     origin_author = as.factor(origin_author),
     origin_cat = as.factor(origin_cat),
-    school_pntg = as.factor(school_pntg),
+    school_pntg = ifelse(school_pntg %in% c("A", "X"), "X", school_pntg) %>% as.factor(.),
     authorstyle = ifelse(authorstyle %in% c("n/a", ""), 0, 1) %>% as.factor(),
     #winningbiddertype = ifelse(winningbiddertype %in% c("n/a", ""), "X", winningbiddertype) %>% as.factor(),
     endbuyer = ifelse(endbuyer %in% c("n/a", ""), "X", endbuyer) %>% as.factor(),
@@ -103,10 +103,6 @@ paintings_train_1 = paintings_train %>%
     lrgfont = as.factor(lrgfont),
     relig = as.factor(relig),
     landsALL = as.factor(landsALL),
-    #lands_sc = as.factor(lands_sc),
-    #lands_elem = as.factor(lands_elem),
-    #lands_figs = as.factor(lands_figs),
-    #lands_ment = as.factor(lands_ment),
     arch = as.factor(arch),
     mytho = as.factor(mytho),
     peasant = as.factor(peasant),
@@ -202,10 +198,6 @@ paintings_test_1 = paintings_test %>%
     lrgfont = as.factor(lrgfont),
     relig = as.factor(relig),
     landsALL = as.factor(landsALL),
-    #lands_sc = as.factor(lands_sc),
-    #lands_elem = as.factor(lands_elem),
-    #lands_figs = as.factor(lands_figs),
-    #lands_ment = as.factor(lands_ment),
     arch = as.factor(arch),
     mytho = as.factor(mytho),
     peasant = as.factor(peasant),
@@ -234,104 +226,57 @@ paintings_test_2 = mice::complete(micetest) %>%
 ############## Modeling  ######################################
 ###############################################################
 
-## 1. Improve Linear regression
-
-```{r}
-## BMA Variable selection
-
-## JZS prior
-bma1 = bas.lm(logprice~ ., 
-             data=paintings_train_2, 
-             method="MCMC", 
-             prior = "JZS",
-             modelprior=uniform(),
-             MCMC.iterations=100000, 
-             thin = 10,
-             n.models = 15000,
-             force.heredity=TRUE)
-BPM1 = predict(bma1, estimator = "BPM")
-
-## g-prior
-bma2 = bas.lm(logprice~ ., 
-             data=paintings_train_2, 
-             alpha = nrow(paintings_train_2),
-             prior = "g-prior",
-             modelprior=uniform(),
-             method = "MCMC",
-             n.models = 15000)
-
-BPM2 = predict(bma2, estimator = "BPM")
-
-variable.names(BPM1)
-variable.names(BPM2)
-```
-
-
-```{r}
-## OLS
-ols = lm(logprice ~ (dealer + school_pntg + diff_origin + artistliving + endbuyer + authorstyle + 
-                       Interm + Shape + Surface + engraved + prevcoll + paired + finished + lrgfont 
-                     + portrait + discauth + still_life + year + author + subject)^2, 
-         data = paintings_train_2)
-
-summary(ols)
-n = nrow(paintings_train_2)
-BIC = step(ols, k = log(n))
-```
-
-
-```{r}
-ols.2 = lm(logprice ~ Shape + school_pntg + author + subject + year*author + year*dealer + year*subject + year*artistliving + dealer*Interm + dealer*Surface + dealer*paired + dealer*finished + diff_origin*Surface + diff_origin*portrait + artistliving*endbuyer + Interm*Surface + Interm*lrgfont + Surface*lrgfont + Surface*still_life + Surface*discauth + prevcoll*finished + paired*lrgfont + paired*discauth + diff_origin*authorstyle + diff_origin*still_life + finished*discauth + lrgfont*discauth + artistliving*finished + Interm*portrait + dealer*artistliving + authorstyle*prevcoll, data = paintings_train_2)
-
-summary(ols.2)
-
-test = lm(logprice ~ author*Shape + author*school_pntg + year*author + author*subject + author*dealer + author*Interm + author*Surface + author*paired + author*finished + author*diff_origin + author*portrait + author*artistliving + author*endbuyer + author*lrgfont + author*still_life + author*discauth + author*prevcoll + author*authorstyle, data = paintings_train_2)
-summary(test)
-```
-
 ## Negative Binomial
 ```{r}
+library(MASS)
+nb.train = paintings_train_2 %>% dplyr::select(-logprice)
+nb.test = paintings_test_2 %>% dplyr::select(-logprice, -price)
 
+nb = glm.nb(price ~., data = nb.train)
+
+predictions = as.data.frame(
+  exp(predict(nb, newdata=nb.test)))
+
+colnames(predictions) = "fit"
+save(predictions, file="predict-test.Rdata")
 ```
 
 
 ## RF
 ```{r}
 library(randomForest)
+
+rf.train = paintings_train_2 %>% dplyr::select(-price)
+rf.test = paintings_test_2 %>% dplyr::select(-price, -logprice)
+
 rf = randomForest(logprice ~ .,
-                       data = paintings_train_2, 
-                       importance = TRUE)
-print(rf)
+                  data = rf.train,
+                  importance = TRUE)
+
+predictions = as.data.frame(
+  exp(predict(rf, 
+              newdata=rf.test)))
+colnames(predictions) = "fit"
+save(predictions, file="predict-test.Rdata")
 ```
 
 ## boosting
 ```{r}
 library(gbm)
-boosting = gbm(logprice ~.,
+boosting = gbm(logprice ~. -price,
                data = paintings_train_2,
                distribution = "gaussian",
                n.trees = 5000,
                interaction.depth = 4)
 ```
 
-## BART
-```{r}
-library(BART)
-X = model.matrix(logprice ~., 
-                 data = paintings_train_2)[,-1]
-bart = pbart(x.train = X,
-             y.train = paintings_train_2$logprice,
-             printevery = 1000)
-
-```
-
-
 ```{r}
 predictions = as.data.frame(
-  exp(predict(ols.2, 
+  exp(predict(boosting, 
               newdata=paintings_test_2,
-              interval = "pred")))
-
+              n.trees = 5000,
+              type = "response")))
+colnames(predictions) = "fit"
 save(predictions, file="predict-test.Rdata")
 ```
 
