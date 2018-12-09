@@ -196,12 +196,11 @@ variable.names(BPM1)
 ## g-prior
 bma2 = bas.lm(logprice~ ., 
              data=paintings_train_2, 
-             method="MCMC", 
-             prior = "JZS",
+             alpha = nrow(paintings_train_2),
+             prior = "g-prior",
              modelprior=uniform(),
-             n.models = 15000, MCMC.iterations=100000, 
-             thin = 10, initprobs="marg-eplogp",
-             force.heredity=FALSE)
+             method = "MCMC",
+             n.models = 15000)
 
 plot(bma2, which=4)
 BPM2 = predict(bma2, estimator = "BPM")
