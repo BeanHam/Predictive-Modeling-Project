@@ -51,6 +51,7 @@ load("paintings_test.Rdata")
                  -lands_figs,
                  -lands_ment,
                  -lot,
+                 -winningbiddertype,
                  -type_intermed) %>% 
    mutate(
      subject = ifelse(str_detect(paintings_train$subject,"Paysages|paysages|Paysage|paysage"), "Paysage",
@@ -79,13 +80,14 @@ load("paintings_test.Rdata")
           ifelse(str_detect(paintings_train$author,"Nicolas Poussin|N. Poussin"), "Nicolas Poussin",
           ifelse(str_detect(paintings_train$author,"Gaspard Netscher|G. Netscher"), "Gaspard Netscher",
           ifelse(str_detect(paintings_train$author,"Nicolas Berghem|N. Berghem"), "Nicolas Berghem", "other")))))))))) %>% as.factor(.),
+     
      price = as.integer(price),
      dealer = as.factor(dealer),
      origin_author = as.factor(origin_author),
      origin_cat = as.factor(origin_cat),
      school_pntg = ifelse(school_pntg %in% c("A", "X"), "X", school_pntg) %>% as.factor(.),
      authorstyle = ifelse(authorstyle %in% c("n/a", ""), 0, 1) %>% as.factor(),
-     winningbiddertype = ifelse(winningbiddertype %in% c("n/a", ""), "X", winningbiddertype) %>% as.factor(),
+     #winningbiddertype = ifelse(winningbiddertype %in% c("n/a", ""), "X", winningbiddertype) %>% as.factor(),
      endbuyer = ifelse(endbuyer %in% c("n/a", ""), "X", endbuyer) %>% as.factor(),
      materialCat = ifelse(materialCat %in% c("n/a", ""), "other", materialCat) %>% as.factor(),
      Shape = ifelse(Shape %in% c("round", "roude"), "round",
@@ -145,6 +147,7 @@ paintings_test_1 = paintings_test %>%
                  -lands_figs,
                  -lands_ment,
                  -lot,
+                 -winningbiddertype,
                  -type_intermed) %>% 
    mutate(
      subject = ifelse(str_detect(paintings_test$subject,"Paysages|paysages|Paysage|paysage"), "Paysage",
@@ -173,13 +176,14 @@ paintings_test_1 = paintings_test %>%
           ifelse(str_detect(paintings_test$author,"Nicolas Poussin|N. Poussin"), "Nicolas Poussin",
           ifelse(str_detect(paintings_test$author,"Gaspard Netscher|G. Netscher"), "Gaspard Netscher",
           ifelse(str_detect(paintings_test$author,"Nicolas Berghem|N. Berghem"), "Nicolas Berghem", "other")))))))))) %>% as.factor(.),
+     
      price= as.integer(logprice),
      dealer = as.factor(dealer),
      origin_author = as.factor(origin_author),
      origin_cat = as.factor(origin_cat),
      school_pntg = as.factor(school_pntg),
      authorstyle = ifelse(authorstyle %in% c("n/a", ""), 0, 1) %>% as.factor(),
-     winningbiddertype = ifelse(winningbiddertype %in% c("n/a", "", "EB"), "X", winningbiddertype) %>% as.factor(),
+     #winningbiddertype = ifelse(winningbiddertype %in% c("n/a", "", "EB"), "X", winningbiddertype) %>% as.factor(),
      endbuyer = ifelse(endbuyer %in% c("n/a", ""), "X", endbuyer) %>% as.factor(),
      materialCat = ifelse(materialCat %in% c("n/a", ""), "other", materialCat) %>% as.factor(),
      Shape = ifelse(Shape %in% c("round", "roude"), "round",
