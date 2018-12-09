@@ -271,7 +271,7 @@ ols.2 = lm(logprice ~ Shape + school_pntg
            + diff_origin*subject + diff_origin*Surface + diff_origin*portrait + diff_origin*authorstyle + diff_origin*still_life
            + artistliving*year + artistliving*endbuyer + artistliving*finished
            + Interm*lrgfont + Interm*portrait
-           + Surface*diff_origin + Surface*author + Surface*subject
+           + Surface*diff_origin + Surface*subject
            + prevcoll*finished + prevcoll*authorstyle
            + paired*lrgfont + paired*discauth + paired*author + paired*subject
            + finished*discauth
@@ -357,6 +357,7 @@ rf.test = paintings_test_2 %>% dplyr::select(-logprice, -price)
 
 rf = randomForest(logprice ~ .,
                   data = rf.train,
+                  mtry = 6,
                   importance = TRUE)
 
 predictions = as.data.frame(
