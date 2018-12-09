@@ -54,17 +54,17 @@ paintings_train_1 = paintings_train %>%
                 -winningbiddertype,
                 -type_intermed) %>% 
   mutate(
-#    subject = ifelse(str_detect(paintings_train$subject,"Paysages|paysages|Paysage|paysage"), "Paysage",
-#          ifelse(str_detect(paintings_train$subject,"Saint|Saints|saint|saints"), "Saint",
-#          ifelse(str_detect(paintings_train$subject,"Portrait|Portraits|portrait|portraits"), "Portrait",
-#          ifelse(str_detect(paintings_train$subject,"Notre Seigneur|NS|Notre-Seigneur|N.S."), "NS",
-#          ifelse(str_detect(paintings_train$subject,"Marine|marine|Marines|marines"), "Marine",
-#          ifelse(str_detect(paintings_train$subject,"Bustes|bustes|Buste|buste"), "Buste", 
-#          ifelse(str_detect(paintings_train$subject,"Fruits|fruits|Fruit|fruit|Fleurs|flures|Fleur|fleur"), #"Fruit$Flower", 
-#          ifelse(str_detect(paintings_train$subject,"Femmes|Femme|femmes|femme"), "Femme", 
-#          ifelse(str_detect(paintings_train$subject,"Sujets|sujets|Sujet|sujet"), "Sujet", 
-#          ifelse(str_detect(paintings_train$subject,"Hommes|Homme|hommes|homme"), "Homme",
-#          ifelse(str_detect(paintings_train$subject,"Enfants|enfants|Enfant|enfant|L'Enfant"), "Enfants", #"other"))))))))))) %>% as.factor(.),
+    subject = ifelse(str_detect(paintings_train$subject,"Paysages|paysages|Paysage|paysage"), "Paysage",
+          ifelse(str_detect(paintings_train$subject,"Saint|Saints|saint|saints"), "Saint",
+          ifelse(str_detect(paintings_train$subject,"Portrait|Portraits|portrait|portraits"), "Portrait",
+          ifelse(str_detect(paintings_train$subject,"Notre Seigneur|NS|Notre-Seigneur|N.S."), "NS",
+          ifelse(str_detect(paintings_train$subject,"Marine|marine|Marines|marines"), "Marine",
+          ifelse(str_detect(paintings_train$subject,"Bustes|bustes|Buste|buste"), "Buste", 
+          ifelse(str_detect(paintings_train$subject,"Fruits|fruits|Fruit|fruit|Fleurs|flures|Fleur|fleur"), "Fruit$Flower", 
+          ifelse(str_detect(paintings_train$subject,"Femmes|Femme|femmes|femme"), "Femme", 
+          ifelse(str_detect(paintings_train$subject,"Sujets|sujets|Sujet|sujet"), "Sujet", 
+          ifelse(str_detect(paintings_train$subject,"Hommes|Homme|hommes|homme"), "Homme",
+          ifelse(str_detect(paintings_train$subject,"Enfants|enfants|Enfant|enfant|L'Enfant"), "Enfants", "other"))))))))))) %>% as.factor(.),
     
     author = ifelse(str_detect(paintings_train$author,
                                "David Teniers|David Tesniers|David T\x8eniers"), "David Teniers", 
@@ -84,7 +84,7 @@ paintings_train_1 = paintings_train %>%
     dealer = as.factor(dealer),
     origin_author = as.factor(origin_author),
     origin_cat = as.factor(origin_cat),
-    school_pntg = as.factor(school_pntg),
+    school_pntg = ifelse(school_pntg %in% c("A", "X"), "X", school_pntg) %>% as.factor(.),
     authorstyle = ifelse(authorstyle %in% c("n/a", ""), 0, 1) %>% as.factor(),
     #winningbiddertype = ifelse(winningbiddertype %in% c("n/a", ""), "X", winningbiddertype) %>% as.factor(),
     endbuyer = ifelse(endbuyer %in% c("n/a", ""), "X", endbuyer) %>% as.factor(),
@@ -149,17 +149,17 @@ paintings_test_1 = paintings_test %>%
                 -winningbiddertype,
                 -type_intermed) %>% 
   mutate(
-#    subject = ifelse(str_detect(paintings_test$subject,"Paysages|paysages|Paysage|paysage"), "Paysage",
-#          ifelse(str_detect(paintings_test$subject,"Saint|Saints|saint|saints"), "Saint",
-#          ifelse(str_detect(paintings_test$subject,"Portrait|Portraits|portrait|portraits"), "Portrait",
-#          ifelse(str_detect(paintings_test$subject,"Notre Seigneur|NS|Notre-Seigneur|N.S."), "NS",
-#          ifelse(str_detect(paintings_test$subject,"Marine|marine|Marines|marines"), "Marine",
-#          ifelse(str_detect(paintings_test$subject,"Bustes|bustes|Buste|buste"), "Buste", 
-#          ifelse(str_detect(paintings_test$subject,"Fruits|fruits|Fruit|fruit|Fleurs|flures|Fleur|fleur"), #"Fruit$Flower", 
-#          ifelse(str_detect(paintings_test$subject,"Femmes|Femme|femmes|femme"), "Femme", 
-#          ifelse(str_detect(paintings_test$subject,"Sujets|sujets|Sujet|sujet"), "Sujet", 
-#          ifelse(str_detect(paintings_test$subject,"Hommes|Homme|hommes|homme"), "Homme",
-#          ifelse(str_detect(paintings_test$subject,"Enfants|enfants|Enfant|enfant|L'Enfant"), "Enfants", #"other"))))))))))) %>% as.factor(.),
+    subject = ifelse(str_detect(paintings_test$subject,"Paysages|paysages|Paysage|paysage"), "Paysage",
+          ifelse(str_detect(paintings_test$subject,"Saint|Saints|saint|saints"), "Saint",
+          ifelse(str_detect(paintings_test$subject,"Portrait|Portraits|portrait|portraits"), "Portrait",
+          ifelse(str_detect(paintings_test$subject,"Notre Seigneur|NS|Notre-Seigneur|N.S."), "NS",
+          ifelse(str_detect(paintings_test$subject,"Marine|marine|Marines|marines"), "Marine",
+          ifelse(str_detect(paintings_test$subject,"Bustes|bustes|Buste|buste"), "Buste", 
+          ifelse(str_detect(paintings_test$subject,"Fruits|fruits|Fruit|fruit|Fleurs|flures|Fleur|fleur"), "Fruit$Flower", 
+          ifelse(str_detect(paintings_test$subject,"Femmes|Femme|femmes|femme"), "Femme", 
+          ifelse(str_detect(paintings_test$subject,"Sujets|sujets|Sujet|sujet"), "Sujet", 
+          ifelse(str_detect(paintings_test$subject,"Hommes|Homme|hommes|homme"), "Homme",
+          ifelse(str_detect(paintings_test$subject,"Enfants|enfants|Enfant|enfant|L'Enfant"), "Enfants", "other"))))))))))) %>% as.factor(.),
     
     author = ifelse(str_detect(paintings_test$author,
                                "David Teniers|David Tesniers|David T\x8eniers"), "David Teniers", 
@@ -273,57 +273,51 @@ BIC = step(ols, k = log(n))
 
 
 ```{r}
-ols.2 = lm(logprice ~ Shape + school_pntg + author + subject + year*author + year*dealer + year*subject + year*artistliving + dealer*Interm + dealer*Surface + dealer*paired + dealer*finished + diff_origin*Surface + diff_origin*portrait + artistliving*endbuyer + Interm*Surface + Interm*lrgfont + Surface*lrgfont + Surface*still_life + Surface*discauth + prevcoll*finished + paired*lrgfont + paired*discauth + diff_origin*authorstyle + diff_origin*still_life + finished*discauth + lrgfont*discauth + artistliving*finished + Interm*portrait + dealer*artistliving + authorstyle*prevcoll, data = paintings_train_2)
+ols.2 = lm(logprice ~ Shape + school_pntg + author + subject + year*author + year*dealer + year*artistliving + dealer*Interm + dealer*Surface + dealer*paired + dealer*finished + diff_origin*Surface + diff_origin*portrait + artistliving*endbuyer + Interm*Surface + Interm*lrgfont + Surface*lrgfont + Surface*still_life + Surface*discauth + prevcoll*finished + paired*lrgfont + paired*discauth + diff_origin*authorstyle + diff_origin*still_life + finished*discauth + lrgfont*discauth + artistliving*finished + Interm*portrait + dealer*artistliving + authorstyle*prevcoll, data = paintings_train_2)
 
 summary(ols.2)
 
-test = lm(logprice ~ author*Shape + author*school_pntg + year*author + author*subject + author*dealer + author*Interm + author*Surface + author*paired + author*finished + author*diff_origin + author*portrait + author*artistliving + author*endbuyer + author*lrgfont + author*still_life + author*discauth + author*prevcoll + author*authorstyle, data = paintings_train_2)
-summary(test)
+predictions = as.data.frame(
+  exp(predict(ols.2, 
+              newdata=paintings_test_2,
+              type = "response")))
+colnames(predictions) = "fit"
+save(predictions, file="predict-test.Rdata")
 ```
 
 ## Negative Binomial
 ```{r}
-
+nb = glm.nb(price ~ .-logprice, 
+            data = paintings_train_2)
 ```
 
 
 ## RF
 ```{r}
 library(randomForest)
-rf = randomForest(logprice ~ .,
+rf = randomForest(logprice ~ . -price,
                        data = paintings_train_2, 
                        importance = TRUE)
-print(rf)
+rf.pred = predict(rf, newdata = paintings_test_2)
 ```
 
 ## boosting
 ```{r}
 library(gbm)
-boosting = gbm(logprice ~.,
+boosting = gbm(logprice ~. -price,
                data = paintings_train_2,
                distribution = "gaussian",
                n.trees = 5000,
                interaction.depth = 4)
 ```
 
-## BART
-```{r}
-library(BART)
-X = model.matrix(logprice ~., 
-                 data = paintings_train_2)[,-1]
-bart = pbart(x.train = X,
-             y.train = paintings_train_2$logprice,
-             printevery = 1000)
-
-```
-
-
 ```{r}
 predictions = as.data.frame(
-  exp(predict(ols.2, 
+  exp(predict(boosting, 
               newdata=paintings_test_2,
-              interval = "pred")))
-
+              n.trees = 5000,
+              type = "response")))
+colnames(predictions) = "fit"
 save(predictions, file="predict-test.Rdata")
 ```
 
