@@ -311,7 +311,7 @@ save(predictions, file="predict-test.Rdata")
 
 
 ```{r}
-ols.2 = lm(logprice ~ Shape + school_pntg + Surface*lrgfont + dealer*Interm + dealer*paired + dealer*finished + diff_origin*portrait + artistliving*endbuyer + Interm*lrgfont + prevcoll*finished + paired*lrgfont + paired*discauth + diff_origin*authorstyle + diff_origin*still_life + finished*discauth + lrgfont*discauth + artistliving*finished + Interm*portrait + dealer*artistliving + authorstyle*prevcoll, data = paintings_train_2)
+ols.2 = lm(logprice ~ Shape + school_pntg + Surface*still_life + dealer*Interm + dealer*paired + dealer*finished + diff_origin*portrait + artistliving*endbuyer + Interm*lrgfont + prevcoll*finished + paired*lrgfont + paired*discauth + diff_origin*authorstyle + diff_origin*still_life + finished*discauth + lrgfont*discauth + artistliving*finished + Interm*portrait + dealer*artistliving + authorstyle*prevcoll, data = paintings_train_2)
 
 summary(ols.2)
 
