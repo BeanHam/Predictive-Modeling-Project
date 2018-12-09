@@ -243,7 +243,7 @@ options(max.print = 10000)
 summary(AIC)
 ```
 
-
+## AIC output
 ```{r}
 ols.2 = lm(logprice ~ Shape + school_pntg 
            + dealer*diff_origin + dealer*artistliving + dealer*authorstyle + dealer*Surface + dealer*discauth + dealer*year + dealer*Interm 
@@ -262,7 +262,7 @@ ols.2 = lm(logprice ~ Shape + school_pntg
            data = ols.train)
 ```
 
-
+## Modification
 ```{r}
 ##
 ols.2 = lm(logprice ~ Shape + school_pntg 
@@ -270,13 +270,34 @@ ols.2 = lm(logprice ~ Shape + school_pntg
            + diff_origin*subject + diff_origin*Surface + diff_origin*portrait + diff_origin*authorstyle + diff_origin*still_life
            + artistliving*year + artistliving*endbuyer + artistliving*finished
            + Interm*Surface + Interm*lrgfont + Interm*portrait
-           + Surface*still_life + Surface*lrgfont + Surface*year + Surface*author + Surface*subject + Surface*discauth
+           + Surface*still_life + Surface*lrgfont + Surface*author + Surface*subject + Surface*discauth
            + prevcoll*finished + prevcoll*authorstyle
-           + paired*lrgfont + paired*discauth + paired*year + paired*author + paired*subject
+           + paired*lrgfont + paired*discauth + paired*author + paired*subject
            + finished*discauth
-           + lrgfont*discauth
-           + discauth*year
-           + year*subject, 
+           + lrgfont*discauth, 
+           data = paintings_train_2)
+summary(ols.2)
+
+predictions = as.data.frame(
+  exp(predict(ols.2, newdata=paintings_test_2, type = "response")))
+
+colnames(predictions) = "fit"
+save(predictions, file="predict-test.Rdata")
+
+```
+
+## Without surface
+```{r}
+##
+ols.2 = lm(logprice ~ Shape + school_pntg 
+           + dealer*finished + dealer*year + dealer*Interm + dealer*paired + dealer*artistliving
+           + diff_origin*subject + diff_origin*portrait + diff_origin*authorstyle + diff_origin*still_life
+           + artistliving*year + artistliving*endbuyer + artistliving*finished
+           + Interm*lrgfont + Interm*portrait
+           + prevcoll*finished + prevcoll*authorstyle
+           + paired*lrgfont + paired*discauth + paired*author + paired*subject
+           + finished*discauth
+           + lrgfont*discauth, 
            data = paintings_train_2)
 summary(ols.2)
 
@@ -290,8 +311,18 @@ save(predictions, file="predict-test.Rdata")
 
 
 ```{r}
-ols.2 = lm(logprice ~ Shape + school_pntg + dealer*Interm + dealer*Surface + dealer*paired + dealer*finished + diff_origin*Surface + diff_origin*portrait + artistliving*endbuyer + Interm*Surface + Interm*lrgfont + Surface*lrgfont + Surface*still_life + Surface*discauth + prevcoll*finished + paired*lrgfont + paired*discauth + diff_origin*authorstyle + diff_origin*still_life + finished*discauth + lrgfont*discauth + artistliving*finished + Interm*portrait + dealer*artistliving + authorstyle*prevcoll, data = paintings_train_2)
+ols.2 = lm(logprice ~ Shape + school_pntg + dealer*Interm + dealer*paired + dealer*finished + diff_origin*portrait + artistliving*endbuyer + Interm*lrgfont + prevcoll*finished + paired*lrgfont + paired*discauth + diff_origin*authorstyle + diff_origin*still_life + finished*discauth + lrgfont*discauth + artistliving*finished + Interm*portrait + dealer*artistliving + authorstyle*prevcoll, data = paintings_train_2)
+
+summary(ols.2)
+
+predictions = as.data.frame(
+  exp(predict(ols.2, newdata=paintings_test_2, type = "response")))
+
+colnames(predictions) = "fit"
+save(predictions, file="predict-test.Rdata")
 ```
+
+
 
 ## Linear
 ```{r}
