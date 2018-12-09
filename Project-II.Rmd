@@ -54,17 +54,17 @@ paintings_train_1 = paintings_train %>%
                 -winningbiddertype,
                 -type_intermed) %>% 
   mutate(
-    subject = ifelse(str_detect(paintings_train$subject,"Paysages|paysages|Paysage|paysage"), "Paysage",
-          ifelse(str_detect(paintings_train$subject,"Saint|Saints|saint|saints"), "Saint",
-          ifelse(str_detect(paintings_train$subject,"Portrait|Portraits|portrait|portraits"), "Portrait",
-          ifelse(str_detect(paintings_train$subject,"Notre Seigneur|NS|Notre-Seigneur|N.S."), "NS",
-          ifelse(str_detect(paintings_train$subject,"Marine|marine|Marines|marines"), "Marine",
-          ifelse(str_detect(paintings_train$subject,"Bustes|bustes|Buste|buste"), "Buste", 
-          ifelse(str_detect(paintings_train$subject,"Fruits|fruits|Fruit|fruit|Fleurs|flures|Fleur|fleur"), "Fruit$Flower", 
-          ifelse(str_detect(paintings_train$subject,"Femmes|Femme|femmes|femme"), "Femme", 
-          ifelse(str_detect(paintings_train$subject,"Sujets|sujets|Sujet|sujet"), "Sujet", 
-          ifelse(str_detect(paintings_train$subject,"Hommes|Homme|hommes|homme"), "Homme",
-          ifelse(str_detect(paintings_train$subject,"Enfants|enfants|Enfant|enfant|L'Enfant"), "Enfants", "other"))))))))))) %>% as.factor(.),
+#    subject = ifelse(str_detect(paintings_train$subject,"Paysages|paysages|Paysage|paysage"), "Paysage",
+#          ifelse(str_detect(paintings_train$subject,"Saint|Saints|saint|saints"), "Saint",
+#          ifelse(str_detect(paintings_train$subject,"Portrait|Portraits|portrait|portraits"), "Portrait",
+#          ifelse(str_detect(paintings_train$subject,"Notre Seigneur|NS|Notre-Seigneur|N.S."), "NS",
+#          ifelse(str_detect(paintings_train$subject,"Marine|marine|Marines|marines"), "Marine",
+#          ifelse(str_detect(paintings_train$subject,"Bustes|bustes|Buste|buste"), "Buste", 
+#          ifelse(str_detect(paintings_train$subject,"Fruits|fruits|Fruit|fruit|Fleurs|flures|Fleur|fleur"), #"Fruit$Flower", 
+#          ifelse(str_detect(paintings_train$subject,"Femmes|Femme|femmes|femme"), "Femme", 
+#          ifelse(str_detect(paintings_train$subject,"Sujets|sujets|Sujet|sujet"), "Sujet", 
+#          ifelse(str_detect(paintings_train$subject,"Hommes|Homme|hommes|homme"), "Homme",
+#          ifelse(str_detect(paintings_train$subject,"Enfants|enfants|Enfant|enfant|L'Enfant"), "Enfants", #"other"))))))))))) %>% as.factor(.),
     
     author = ifelse(str_detect(paintings_train$author,
                                "David Teniers|David Tesniers|David T\x8eniers"), "David Teniers", 
@@ -103,10 +103,6 @@ paintings_train_1 = paintings_train %>%
     lrgfont = as.factor(lrgfont),
     relig = as.factor(relig),
     landsALL = as.factor(landsALL),
-    #lands_sc = as.factor(lands_sc),
-    #lands_elem = as.factor(lands_elem),
-    #lands_figs = as.factor(lands_figs),
-    #lands_ment = as.factor(lands_ment),
     arch = as.factor(arch),
     mytho = as.factor(mytho),
     peasant = as.factor(peasant),
@@ -153,17 +149,17 @@ paintings_test_1 = paintings_test %>%
                 -winningbiddertype,
                 -type_intermed) %>% 
   mutate(
-    subject = ifelse(str_detect(paintings_test$subject,"Paysages|paysages|Paysage|paysage"), "Paysage",
-          ifelse(str_detect(paintings_test$subject,"Saint|Saints|saint|saints"), "Saint",
-          ifelse(str_detect(paintings_test$subject,"Portrait|Portraits|portrait|portraits"), "Portrait",
-          ifelse(str_detect(paintings_test$subject,"Notre Seigneur|NS|Notre-Seigneur|N.S."), "NS",
-          ifelse(str_detect(paintings_test$subject,"Marine|marine|Marines|marines"), "Marine",
-          ifelse(str_detect(paintings_test$subject,"Bustes|bustes|Buste|buste"), "Buste", 
-          ifelse(str_detect(paintings_test$subject,"Fruits|fruits|Fruit|fruit|Fleurs|flures|Fleur|fleur"), "Fruit$Flower", 
-          ifelse(str_detect(paintings_test$subject,"Femmes|Femme|femmes|femme"), "Femme", 
-          ifelse(str_detect(paintings_test$subject,"Sujets|sujets|Sujet|sujet"), "Sujet", 
-          ifelse(str_detect(paintings_test$subject,"Hommes|Homme|hommes|homme"), "Homme",
-          ifelse(str_detect(paintings_test$subject,"Enfants|enfants|Enfant|enfant|L'Enfant"), "Enfants", "other"))))))))))) %>% as.factor(.),
+#    subject = ifelse(str_detect(paintings_test$subject,"Paysages|paysages|Paysage|paysage"), "Paysage",
+#          ifelse(str_detect(paintings_test$subject,"Saint|Saints|saint|saints"), "Saint",
+#          ifelse(str_detect(paintings_test$subject,"Portrait|Portraits|portrait|portraits"), "Portrait",
+#          ifelse(str_detect(paintings_test$subject,"Notre Seigneur|NS|Notre-Seigneur|N.S."), "NS",
+#          ifelse(str_detect(paintings_test$subject,"Marine|marine|Marines|marines"), "Marine",
+#          ifelse(str_detect(paintings_test$subject,"Bustes|bustes|Buste|buste"), "Buste", 
+#          ifelse(str_detect(paintings_test$subject,"Fruits|fruits|Fruit|fruit|Fleurs|flures|Fleur|fleur"), #"Fruit$Flower", 
+#          ifelse(str_detect(paintings_test$subject,"Femmes|Femme|femmes|femme"), "Femme", 
+#          ifelse(str_detect(paintings_test$subject,"Sujets|sujets|Sujet|sujet"), "Sujet", 
+#          ifelse(str_detect(paintings_test$subject,"Hommes|Homme|hommes|homme"), "Homme",
+#          ifelse(str_detect(paintings_test$subject,"Enfants|enfants|Enfant|enfant|L'Enfant"), "Enfants", #"other"))))))))))) %>% as.factor(.),
     
     author = ifelse(str_detect(paintings_test$author,
                                "David Teniers|David Tesniers|David T\x8eniers"), "David Teniers", 
@@ -202,10 +198,6 @@ paintings_test_1 = paintings_test %>%
     lrgfont = as.factor(lrgfont),
     relig = as.factor(relig),
     landsALL = as.factor(landsALL),
-    #lands_sc = as.factor(lands_sc),
-    #lands_elem = as.factor(lands_elem),
-    #lands_figs = as.factor(lands_figs),
-    #lands_ment = as.factor(lands_ment),
     arch = as.factor(arch),
     mytho = as.factor(mytho),
     peasant = as.factor(peasant),
@@ -271,7 +263,7 @@ variable.names(BPM2)
 ## OLS
 ols = lm(logprice ~ (dealer + school_pntg + diff_origin + artistliving + endbuyer + authorstyle + 
                        Interm + Shape + Surface + engraved + prevcoll + paired + finished + lrgfont 
-                     + portrait + discauth + still_life + year + author + subject)^2, 
+                     + portrait + discauth + still_life + year + author)^2, 
          data = paintings_train_2)
 
 summary(ols)
