@@ -289,7 +289,7 @@ save(predictions, file="predict-test.Rdata")
 ## Without surface
 ```{r}
 ##
-ols.2 = lm(logprice ~ Shape + school_pntg 
+ols.2 = lm(logprice ~ Shape + school_pntg + Surface
            + dealer*finished + dealer*year + dealer*Interm + dealer*paired + dealer*artistliving
            + diff_origin*subject + diff_origin*portrait + diff_origin*authorstyle + diff_origin*still_life
            + artistliving*year + artistliving*endbuyer + artistliving*finished
