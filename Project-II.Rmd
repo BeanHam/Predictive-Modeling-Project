@@ -27,9 +27,40 @@ suppressWarnings(library(stringr))
 set.seed(10)
 load("paintings_train.Rdata")
 load("paintings_test.Rdata")
+
+paris_paintings <- read.csv("~/STA521 - Fall2018/Final Project/paris_paintings.csv", comment.char="#", stringsAsFactors=FALSE)
+
+#length(unique(paris_paintings$subject, paris_paintings$dealer))
+#
+#unique(paris_paintings, margin = 1)
 ```
 
 ## Manually Data Cleaning
+```{r}
+evaluate=function(x){
+  if(x<=3.5){
+    authorlevel=0
+  }else if(x<=5){
+    authorlevel=1
+  }else if(x<=7){
+    authorlevel=2
+  }else{
+    authorlevel=3
+  }
+}
+
+author_price_level = paintings_train %>% 
+   dplyr::select(author, logprice) %>% 
+   group_by(author) %>% 
+   summarise(ave=mean(logprice)) %>% 
+   mutate(authorlevel=sapply(ave, evaluate)) %>% 
+   dplyr::select(-ave)
+
+paintings_train=left_join(paintings_train,author_price_level,by="author")
+paintings_test=left_join(paintings_test,author_price_level,by="author")  %>% mutate(authorlevel=ifelse(is.na(authorlevel),0,authorlevel))
+
+```
+
 
 ```{r, echo=FALSE}
 ## Remove Intuitively Useless Variables
@@ -81,6 +112,7 @@ load("paintings_test.Rdata")
           ifelse(str_detect(paintings_train$author,"Gaspard Netscher|G. Netscher"), "Gaspard Netscher",
           ifelse(str_detect(paintings_train$author,"Nicolas Berghem|N. Berghem"), "Nicolas Berghem", "other")))))))))) %>% as.factor(.),
      
+     authorlevel = as.factor(authorlevel),
      price = as.integer(price),
      dealer = as.factor(dealer),
      origin_author = as.factor(origin_author),
@@ -117,7 +149,7 @@ load("paintings_test.Rdata")
      pastorale = as.factor(pastorale),
      finished = as.factor(finished)
    ) %>%  
-   .[,c(8, 1:7, 9:38)]
+   .[,c(8, 1:7, 9:41)]
 
 ```
 
@@ -177,6 +209,7 @@ paintings_test_1 = paintings_test %>%
           ifelse(str_detect(paintings_test$author,"Gaspard Netscher|G. Netscher"), "Gaspard Netscher",
           ifelse(str_detect(paintings_test$author,"Nicolas Berghem|N. Berghem"), "Nicolas Berghem", "other")))))))))) %>% as.factor(.),
      
+     authorlevel = as.factor(authorlevel),
      price= as.integer(logprice),
      dealer = as.factor(dealer),
      origin_author = as.factor(origin_author),
@@ -213,7 +246,7 @@ paintings_test_1 = paintings_test %>%
      pastorale = as.factor(pastorale),
      finished = as.factor(finished)
    ) %>%  
-   .[,c(8, 1:7, 9:38)]
+   .[,c(8, 1:7, 9:41)]
 
 ```
 
@@ -358,7 +391,6 @@ rf.test = paintings_test_2 %>% dplyr::select(-logprice, -price)
 rf = randomForest(logprice ~ .,
                   data = rf.train,
                   importance = TRUE)
-?randomForest
 
 predictions = as.data.frame(
   exp(predict(rf, 
