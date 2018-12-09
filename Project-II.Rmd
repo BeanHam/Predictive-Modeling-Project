@@ -311,7 +311,7 @@ save(predictions, file="predict-test.Rdata")
 
 
 ```{r}
-ols.2 = lm(logprice ~ Shape + school_pntg + Surface*diff_origin + dealer*Interm + dealer*paired + dealer*finished + diff_origin*portrait + artistliving*endbuyer + Interm*lrgfont + prevcoll*finished + paired*lrgfont + paired*discauth + diff_origin*authorstyle + diff_origin*still_life + finished*discauth + lrgfont*discauth + artistliving*finished + Interm*portrait + dealer*artistliving + authorstyle*prevcoll, data = paintings_train_2)
+ols.2 = lm(logprice ~ Shape + school_pntg + diff_origin*Surface + Surface*lrgfont + Surface*still_life + Surface*discauth + dealer*Interm + dealer*paired + dealer*finished + diff_origin*portrait + artistliving*endbuyer + Interm*lrgfont + prevcoll*finished + paired*lrgfont + paired*discauth + diff_origin*authorstyle + diff_origin*still_life + finished*discauth + lrgfont*discauth + artistliving*finished + Interm*portrait + dealer*artistliving + authorstyle*prevcoll, data = paintings_train_2)
 
 summary(ols.2)
 
@@ -320,11 +320,6 @@ predictions = as.data.frame(
 
 colnames(predictions) = "fit"
 save(predictions, file="predict-test.Rdata")
-
-diff_origin*Surface + Interm*Surface + Surface*lrgfont + Surface*still_life + Surface*discauth +
-
-
-
 
 ```
 
