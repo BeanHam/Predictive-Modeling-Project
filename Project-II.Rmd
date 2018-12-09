@@ -285,7 +285,7 @@ ols.2 = lm(logprice ~ Shape + school_pntg + author + subject + year*author + yea
 
 summary(ols.2)
 
-test = lm(logprice ~ year*Shape + year*school_pntg + year*author + year*subject + year*dealer + year*Interm + year*Surface + year*paired + year*finished + year*diff_origin + year*portrait + year*artistliving + year*endbuyer + year*lrgfont + year*still_life + year*discauth + year*prevcoll + year*authorstyle, data = paintings_train_2)
+test = lm(logprice ~ author*Shape + author*school_pntg + year*author + author*subject + author*dealer + author*Interm + author*Surface + author*paired + author*finished + author*diff_origin + author*portrait + author*artistliving + author*endbuyer + author*lrgfont + author*still_life + author*discauth + author*prevcoll + author*authorstyle, data = paintings_train_2)
 summary(test)
 ```
 
