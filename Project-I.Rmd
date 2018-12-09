@@ -95,7 +95,7 @@ paintings_train_1 = paintings_train %>%
     origin_cat = as.factor(origin_cat),
     school_pntg = ifelse(school_pntg %in% c("A", "X"), "X", school_pntg) %>% as.factor(.),
     authorstyle = ifelse(authorstyle %in% c("n/a", ""), 0, 1) %>% as.factor(),
-    winningbiddertype = ifelse(winningbiddertype %in% c("n/a", ""), "X", winningbiddertype) %>% as.factor(),
+    winningbiddertype = ifelse(winningbiddertype %in% c("n/a", "", "EB"), "X", winningbiddertype) %>% as.factor(),
     endbuyer = ifelse(endbuyer %in% c("n/a", ""), "X", endbuyer) %>% as.factor(),
     materialCat = ifelse(materialCat %in% c("n/a", ""), "other", materialCat) %>% as.factor(),
     Shape = ifelse(Shape %in% c("round", "roude"), "round",
@@ -277,7 +277,7 @@ paintings_test_1 = paintings_test %>%
     origin_cat = as.factor(origin_cat),
     school_pntg = as.factor(school_pntg),
     authorstyle = ifelse(authorstyle %in% c("n/a", ""), 0, 1) %>% as.factor(),
-    winningbiddertype = ifelse(winningbiddertype %in% c("n/a", ""), "X", winningbiddertype) %>% as.factor(),
+    winningbiddertype = ifelse(winningbiddertype %in% c("n/a", "", "EB"), "X", winningbiddertype) %>% as.factor(),
     endbuyer = ifelse(endbuyer %in% c("n/a", ""), "X", endbuyer) %>% as.factor(),
     #type_intermed = ifelse(type_intermed %in% c("n/a", ""), "X", type_intermed) %>% as.factor(),
     materialCat = ifelse(materialCat %in% c("n/a", ""), "other", materialCat) %>% as.factor(),
@@ -420,5 +420,23 @@ In order to understand the auction prices of 18th century paintings and predict 
 As mentioned in the data cleaning process, some of the variables have so many levels that fitting (and interpreting) such a model would be cumbersome. Many levels of the categorical variables included in this data set have few observations that are not sufficient for estimating coefficients. Therefore, we grouped some of the levels of variables, and grouped some variables via dimension reduction. This reduces the granularity of the analysis presented above, and risks introducing some bias, as the true model would probably be more granular and include the actual realization of each categorical predictor, not just an artbitrary grouping.
 
 As our goal is to find a balance between the prediction accuracy and interpretability, our model may not predict the logprice response variable as accurately as other more advanced methods (which sacrifice interpretability in exchange for improved predictions). In the next phase of this project, we will attempt to fit other models which do just this, then compare the results to our initial work using an OLS regression model. 
+
+
+```{r}
+library(randomForest)
+
+rf.train = paintings_train_2
+rf.test = paintings_test_2 %>% dplyr::select(-logprice)
+
+rf = randomForest(logprice ~ .,
+                  data = rf.train,
+                  importance = TRUE)
+
+predictions = as.data.frame(
+  exp(predict(rf, 
+              newdata=rf.test)))
+colnames(predictions) = "fit"
+save(predictions, file="predict-test.Rdata")
+```
 
 

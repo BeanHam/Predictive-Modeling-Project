@@ -51,7 +51,6 @@ load("paintings_test.Rdata")
                  -lands_figs,
                  -lands_ment,
                  -lot,
-                 -winningbiddertype,
                  -type_intermed) %>% 
    mutate(
      subject = ifelse(str_detect(paintings_train$subject,"Paysages|paysages|Paysage|paysage"), "Paysage",
@@ -86,7 +85,7 @@ load("paintings_test.Rdata")
      origin_cat = as.factor(origin_cat),
      school_pntg = ifelse(school_pntg %in% c("A", "X"), "X", school_pntg) %>% as.factor(.),
      authorstyle = ifelse(authorstyle %in% c("n/a", ""), 0, 1) %>% as.factor(),
-     #winningbiddertype = ifelse(winningbiddertype %in% c("n/a", ""), "X", winningbiddertype) %>% as.factor(),
+     winningbiddertype = ifelse(winningbiddertype %in% c("n/a", ""), "X", winningbiddertype) %>% as.factor(),
      endbuyer = ifelse(endbuyer %in% c("n/a", ""), "X", endbuyer) %>% as.factor(),
      materialCat = ifelse(materialCat %in% c("n/a", ""), "other", materialCat) %>% as.factor(),
      Shape = ifelse(Shape %in% c("round", "roude"), "round",
@@ -146,7 +145,6 @@ paintings_test_1 = paintings_test %>%
                  -lands_figs,
                  -lands_ment,
                  -lot,
-                 -winningbiddertype,
                  -type_intermed) %>% 
    mutate(
      subject = ifelse(str_detect(paintings_test$subject,"Paysages|paysages|Paysage|paysage"), "Paysage",
@@ -181,7 +179,7 @@ paintings_test_1 = paintings_test %>%
      origin_cat = as.factor(origin_cat),
      school_pntg = as.factor(school_pntg),
      authorstyle = ifelse(authorstyle %in% c("n/a", ""), 0, 1) %>% as.factor(),
-     #winningbiddertype = ifelse(winningbiddertype %in% c("n/a", "", "EB"), "X", winningbiddertype) %>% as.factor(),
+     winningbiddertype = ifelse(winningbiddertype %in% c("n/a", "", "EB"), "X", winningbiddertype) %>% as.factor(),
      endbuyer = ifelse(endbuyer %in% c("n/a", ""), "X", endbuyer) %>% as.factor(),
      materialCat = ifelse(materialCat %in% c("n/a", ""), "other", materialCat) %>% as.factor(),
      Shape = ifelse(Shape %in% c("round", "roude"), "round",
@@ -336,7 +334,7 @@ save(predictions, file="predict-test.Rdata")
 library(randomForest)
 
 rf.train = paintings_train_2 %>% dplyr::select(-price)
-rf.test = paintings_test_2 %>% dplyr::select(-price, -logprice)
+rf.test = paintings_test_2 %>% dplyr::select(-logprice, -price)
 
 rf = randomForest(logprice ~ .,
                   data = rf.train,
