@@ -434,6 +434,23 @@ rmse = function(x, y){
 }
 ```
 
+```{r}
+evaluate=function(x){
+  if(x<=3.5){
+    authorlevel=0
+  }else if(x<=5){
+    authorlevel=1
+  }else if(x<=7){
+    authorlevel=2
+  }else{
+    authorlevel=3
+  }
+}
+
+author=paintings_train %>% select(author,logprice) %>% group_by(author) %>% summarise(ave=mean(logprice)) %>% mutate(authorlevel=sapply(ave, evaluate)) %>% select(-ave)
+paintings_train=left_join(paintings_train,author,by="author")
+paintings_test=left_join(paintings_test,author,by="author")  %>% mutate(authorlevel=ifelse(is.na(authorlevel),0,authorlevel))
+```
 
 ## Manually Data Cleaning
 
