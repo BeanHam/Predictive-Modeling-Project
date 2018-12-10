@@ -380,8 +380,8 @@ save(predictions, file="predict-test.Rdata")
 ```{r}
 library(randomForest)
 
-rf.train = paintings_train_2 %>% dplyr::select(-price, -author)
-rf.test = paintings_test_2 %>% dplyr::select(-logprice, -price, -author)
+rf.train = paintings_train_2
+rf.test = paintings_test_2 %>% dplyr::select(-logprice)
 
 rf = randomForest(logprice ~ .,
                   data = rf.train,
