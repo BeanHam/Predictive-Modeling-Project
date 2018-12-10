@@ -264,6 +264,66 @@ ols.2 = lm(logprice ~ Shape + school_pntg
            data = ols.train)
 ```
 
+## second time data imputation
+```{r}
+paintings_train_3 = paintings_train_1 %>% 
+   dplyr::select(logprice,
+                 dealer,
+                 school_pntg,
+                 diff_origin,
+                 artistliving,
+                 endbuyer,
+                 authorstyle,
+                 Interm,
+                 Shape,
+                 Surface,
+                 engraved,
+                 prevcoll,
+                 paired,
+                 finished,
+                 lrgfont,
+                 portrait,
+                 discauth,
+                 still_life,
+                 year,
+                 author, 
+                 subject)
+
+micetest = mice::mice(paintings_train_3, printFlag = FALSE)
+paintings_train_4 = mice::complete(micetest) %>% 
+  mutate(Interm = as.factor(Interm))
+
+### test
+paintings_test_3 = paintings_test_1 %>% 
+   dplyr::select(logprice,
+                 dealer,
+                 school_pntg,
+                 diff_origin,
+                 artistliving,
+                 endbuyer,
+                 authorstyle,
+                 Interm,
+                 Shape,
+                 Surface,
+                 engraved,
+                 prevcoll,
+                 paired,
+                 finished,
+                 lrgfont,
+                 portrait,
+                 discauth,
+                 still_life,
+                 year,
+                 author, 
+                 subject)
+
+micetest = mice::mice(paintings_test_3, printFlag = FALSE)
+paintings_test_4 = mice::complete(micetest) %>% 
+  mutate(Interm = as.factor(Interm))
+
+```
+
+
 ## Modification
 ```{r}
 ##
@@ -291,12 +351,12 @@ ols.2 = lm(logprice ~ Shape + school_pntg
 
 
 ```{r}
-ols.2 = lm(logprice ~ Shape + school_pntg + dealer*Interm + Surface + dealer*paired + dealer*finished  + diff_origin*portrait + artistliving*endbuyer + Interm*lrgfont + paired*lrgfont + paired*discauth + diff_origin*authorstyle + diff_origin*still_life + finished*discauth + lrgfont*discauth + artistliving*finished + Interm*portrait + dealer*artistliving, data = paintings_train_2)
+ols.2 = lm(logprice ~ Shape + school_pntg + dealer*Interm + dealer*Surface + dealer*paired + dealer*finished + diff_origin*Surface + diff_origin*portrait + artistliving*endbuyer + Interm*Surface + Interm*lrgfont + Surface*lrgfont + Surface*still_life + Surface*discauth + prevcoll*finished + paired*lrgfont + paired*discauth + diff_origin*authorstyle + diff_origin*still_life + finished*discauth + lrgfont*discauth + artistliving*finished + Interm*portrait + dealer*artistliving + authorstyle*prevcoll, data = paintings_train_4)
 
 summary(ols.2)
 
 predictions = as.data.frame(
-  exp(predict(ols.2, newdata=paintings_test_2, type = "response")))
+  exp(predict(ols.2, newdata=paintings_test_4, type = "response")))
 
 colnames(predictions) = "fit"
 save(predictions, file="predict-test.Rdata")
