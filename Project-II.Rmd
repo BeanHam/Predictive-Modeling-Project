@@ -296,7 +296,7 @@ ols.2 = lm(logprice ~ Shape + school_pntg
 ```{r}
 ##
 
-ols.2 = lm(logprice ~ Shape + school_pntg + prevcoll + authorlevel
+ols.2 = lm(logprice ~ Shape + school_pntg + prevcoll
            + dealer*Interm + dealer*paired + dealer*artistliving
            + artistliving*endbuyer + artistliving*finished
            + diff_origin*Surface + diff_origin*portrait  + diff_origin*still_life + diff_origin*prevcoll
