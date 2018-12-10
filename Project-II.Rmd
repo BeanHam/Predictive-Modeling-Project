@@ -640,7 +640,9 @@ paintings_test_2 = mice::complete(micetest) %>%
 ```{r}
 ols.2 = lm(logprice ~ Shape + school_pntg 
            + dealer*diff_origin + dealer*artistliving + dealer*authorstyle + dealer*Surface + dealer*discauth + dealer*year + dealer*Interm 
+           
            + diff_origin*authorstyle + diff_origin*Interm + diff_origin*engraved + diff_origin*prevcoll + diff_origin*paired + diff_origin*lrgfont + diff_origin*subject 
+           
            + artistliving*authorstyle + artistliving*finished + artistliving*portrait + artistliving*year 
            + endbuyer*Surface + endbuyer*paired + endbuyer*discauth + endbuyer*year
            + authorstyle*prevcoll + authorstyle*finished + authorstyle*portrait
@@ -661,17 +663,15 @@ summary(ols.2)
 ```{r}
 ##
 ols.2 = lm(logprice ~ Shape + school_pntg + prevcoll
-           + dealer*Interm + dealer*paired + dealer*artistliving
-           
-           + dealer*diff_origin
-           
-           + artistliving*endbuyer + artistliving*finished
+           + dealer*Interm + dealer*paired + dealer*artistliving + dealer*diff_origin
+           + artistliving*endbuyer + artistliving*finished + artistliving*year
            + diff_origin*Surface + diff_origin*portrait  + diff_origin*still_life + diff_origin*prevcoll
-           + artistliving*year + artistliving*endbuyer
+           + endbuyer*Surface + endbuyer*paired + endbuyer*year
+           + authorstyle*portrait
            + Interm*lrgfont
-           + paired*lrgfont + paired*subject + paired*discauth
+           + paired*lrgfont + paired*subject + paired*discauth + paired*author
            + finished*discauth
-           + lrgfont*discauth, 
+           + lrgfont*discauth,
              data = paintings_train_2)
 
 fitted = exp(predict(ols.2, newdata=paintings_test_2, type = "response"))
