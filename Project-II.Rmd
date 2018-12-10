@@ -330,7 +330,7 @@ ols.2 = lm(logprice ~ Shape + school_pntg + prevcoll
            + diff_origin*Surface + diff_origin*portrait  + diff_origin*still_life + diff_origin*prevcoll
            + artistliving*year + artistliving*endbuyer
            + Interm*lrgfont
-           + paired*lrgfont + paired*author + paired*subject + paired*discauth
+           + paired*lrgfont + paired*subject + paired*discauth
            + finished*discauth
            + lrgfont*discauth, 
              data = paintings_train_2)
