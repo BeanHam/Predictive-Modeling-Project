@@ -403,36 +403,10 @@ save(predictions, file="predict-test.Rdata")
 
 ##### test
 
-
-
 ```{r read-data, echo=FALSE}
 set.seed(10)
 load("paintings_train.Rdata")
 load("paintings_test.Rdata")
-```
-
-```{r}
-evaluate=function(x){
-  if(x<=3.5){
-    authorlevel=0
-  }else if(x<=5){
-    authorlevel=1
-  }else if(x<=7){
-    authorlevel=2
-  }else{
-    authorlevel=3
-  }
-}
-
-author=paintings_train %>% 
-   dplyr::select(author,logprice) %>% 
-   group_by(author) %>% 
-   summarise(ave=mean(logprice)) %>% 
-   mutate(authorlevel=sapply(ave, evaluate)) %>% 
-   dplyr::select(-ave)
-
-paintings_train=left_join(paintings_train,author,by="author")
-paintings_test=left_join(paintings_test,author,by="author")  %>% mutate(authorlevel=ifelse(is.na(authorlevel),0,authorlevel))
 ```
 
 ## Manually Data Cleaning
@@ -441,7 +415,6 @@ paintings_test=left_join(paintings_test,author,by="author")  %>% mutate(authorle
 ## Remove Intuitively Useless Variables
  paintings_train_1 = paintings_train %>% 
    dplyr::select(-sale,
-                 -author,
                  -count,
                  -price,
                  -authorstandard,
@@ -475,22 +448,22 @@ paintings_test=left_join(paintings_test,author,by="author")  %>% mutate(authorle
            ifelse(str_detect(paintings_train$subject,"Adoration|adoration|Adorations|adoration|L'Adoration|L'adoration|Amour|L'Amour|L'amour"), "Adoration", "other"))))))))))) %>% as.factor(.),
     
 
-#     author = ifelse(str_detect(paintings_train$author,
-#                                "David Teniers|David Tesniers|David T\x8eniers"), "David Teniers", 
-#          ifelse(str_detect(paintings_train$author,
-#                            "Francois Boucher|Fran\x8dois Boucher|F. Boucher"), "Francois Boucher", 
-#          ifelse(str_detect(paintings_train$author,
-#                            "Philippe Wouvermans|Philippe Wouwermans|d'apr\x8fs P. Wouvermans|Ph. #Vouvermans|Philippe Wouermans|Philippe Wouwerman"), "Philippe Wouvermans",
-#          ifelse(str_detect(paintings_train$author,
-#                            "Charles de la Fosse|Ch. De la Fosse| Charles de LaFosse|C. la Fosse"), "Charles #de la Fosse",
-#          ifelse(str_detect(paintings_train$author,"French"), "French",
-#          ifelse(str_detect(paintings_train$author,"Gasparo Van Vitelle"), "Gasparo Van Vitelle",
-#          ifelse(str_detect(paintings_train$author,"Rosalba Carriera"), "Rosalba Carriera", 
-#          ifelse(str_detect(paintings_train$author,"Nicolas Poussin|N. Poussin"), "Nicolas Poussin",
-#          ifelse(str_detect(paintings_train$author,"Gaspard Netscher|G. Netscher"), "Gaspard Netscher",
-#          ifelse(str_detect(paintings_train$author,"Nicolas Berghem|N. Berghem"), "Nicolas Berghem", #"other")))))))))) %>% as.factor(.),
+     author = ifelse(str_detect(paintings_train$author,
+                                "David Teniers|David Tesniers|David T\x8eniers"), "David Teniers", 
+          ifelse(str_detect(paintings_train$author,
+                            "Francois Boucher|Fran\x8dois Boucher|F. Boucher"), "Francois Boucher", 
+          ifelse(str_detect(paintings_train$author,
+                            "Philippe Wouvermans|Philippe Wouwermans|d'apr\x8fs P. Wouvermans|Ph. Vouvermans|Philippe Wouermans|Philippe Wouwerman"), "Philippe Wouvermans",
+          ifelse(str_detect(paintings_train$author,
+                            "Charles de la Fosse|Ch. De la Fosse| Charles de LaFosse|C. la Fosse"), "Charles de la Fosse",
+          ifelse(str_detect(paintings_train$author,"French"), "French",
+          ifelse(str_detect(paintings_train$author,"Gasparo Van Vitelle"), "Gasparo Van Vitelle",
+          ifelse(str_detect(paintings_train$author,"Rosalba Carriera"), "Rosalba Carriera", 
+          ifelse(str_detect(paintings_train$author,"Nicolas Poussin|N. Poussin"), "Nicolas Poussin",
+          ifelse(str_detect(paintings_train$author,"Gaspard Netscher|G. Netscher"), "Gaspard Netscher",
+          ifelse(str_detect(paintings_train$author,"Nicolas Berghem|N. Berghem"), "Nicolas Berghem", "other")))))))))) %>% as.factor(.),
      
-     authorlevel = as.factor(authorlevel),
+     #authorlevel = as.factor(authorlevel),
      #price = as.integer(price),
      dealer = as.factor(dealer),
      origin_author = as.factor(origin_author),
@@ -541,7 +514,6 @@ paintings_train_2 = mice::complete(micetest) %>%
 ```{r, echo=FALSE}
 paintings_test_1 = paintings_test %>% 
    dplyr::select(-sale,
-                 -author,
                  -count,
                  -price,
                  -authorstandard,
@@ -576,22 +548,22 @@ paintings_test_1 = paintings_test %>%
      
      
      
-#     author = ifelse(str_detect(paintings_test$author,
-#                                "David Teniers|David Tesniers|David T\x8eniers"), "David Teniers", 
-#          ifelse(str_detect(paintings_test$author,
-#                            "Francois Boucher|Fran\x8dois Boucher|F. Boucher"), "Francois Boucher", 
-#          ifelse(str_detect(paintings_test$author,
-#                            "Philippe Wouvermans|Philippe Wouwermans|d'apr\x8fs P. Wouvermans|Ph. #Vouvermans|Philippe Wouermans|Philippe Wouwerman"), "Philippe Wouvermans",
-#          ifelse(str_detect(paintings_test$author,
-#                            "Charles de la Fosse|Ch. De la Fosse| Charles de LaFosse|C. la Fosse"), "Charles #de la Fosse",
-#          ifelse(str_detect(paintings_test$author,"French"), "French",
-#          ifelse(str_detect(paintings_test$author,"Gasparo Van Vitelle"), "Gasparo Van Vitelle",
-#          ifelse(str_detect(paintings_test$author,"Rosalba Carriera"), "Rosalba Carriera", 
-#          ifelse(str_detect(paintings_test$author,"Nicolas Poussin|N. Poussin"), "Nicolas Poussin",
-#          ifelse(str_detect(paintings_test$author,"Gaspard Netscher|G. Netscher"), "Gaspard Netscher",
-#          ifelse(str_detect(paintings_test$author,"Nicolas Berghem|N. Berghem"), "Nicolas Berghem", #"other")))))))))) %>% as.factor(.),
+     author = ifelse(str_detect(paintings_test$author,
+                                "David Teniers|David Tesniers|David T\x8eniers"), "David Teniers", 
+          ifelse(str_detect(paintings_test$author,
+                            "Francois Boucher|Fran\x8dois Boucher|F. Boucher"), "Francois Boucher", 
+          ifelse(str_detect(paintings_test$author,
+                            "Philippe Wouvermans|Philippe Wouwermans|d'apr\x8fs P. Wouvermans|Ph. Vouvermans|Philippe Wouermans|Philippe Wouwerman"), "Philippe Wouvermans",
+          ifelse(str_detect(paintings_test$author,
+                            "Charles de la Fosse|Ch. De la Fosse| Charles de LaFosse|C. la Fosse"), "Charles de la Fosse",
+          ifelse(str_detect(paintings_test$author,"French"), "French",
+          ifelse(str_detect(paintings_test$author,"Gasparo Van Vitelle"), "Gasparo Van Vitelle",
+          ifelse(str_detect(paintings_test$author,"Rosalba Carriera"), "Rosalba Carriera", 
+          ifelse(str_detect(paintings_test$author,"Nicolas Poussin|N. Poussin"), "Nicolas Poussin",
+          ifelse(str_detect(paintings_test$author,"Gaspard Netscher|G. Netscher"), "Gaspard Netscher",
+          ifelse(str_detect(paintings_test$author,"Nicolas Berghem|N. Berghem"), "Nicolas Berghem", "other")))))))))) %>% as.factor(.),
      
-     authorlevel = as.factor(authorlevel),
+     #authorlevel = as.factor(authorlevel),
      #price= as.integer(logprice),
      dealer = as.factor(dealer),
      origin_author = as.factor(origin_author),
@@ -640,9 +612,31 @@ paintings_test_2 = mice::complete(micetest) %>%
 ```
 
 ```{r}
+ols.2 = lm(logprice ~ Shape + school_pntg 
+           + dealer*diff_origin + dealer*artistliving + dealer*authorstyle + dealer*Surface + dealer*discauth + dealer*year + dealer*Interm 
+           + diff_origin*authorstyle + diff_origin*Interm + diff_origin*engraved + diff_origin*prevcoll + diff_origin*paired + diff_origin*lrgfont + diff_origin*subject 
+           + artistliving*authorstyle + artistliving*finished + artistliving*portrait + artistliving*year 
+           + endbuyer*Surface + endbuyer*paired + endbuyer*discauth + endbuyer*year
+           + authorstyle*prevcoll + authorstyle*finished + authorstyle*portrait
+           + Interm*paired + Interm*lrgfont + Interm*portrait + Interm*discauth
+           + Surface*paired + Surface*lrgfont + Surface*year + Surface*author + Surface*subject
+           + engraved* prevcoll + engraved*lrgfont + engraved*portrait
+           + prevcoll*finished
+           + paired*finished + paired*lrgfont + paired*discauth + paired*year + paired*author + paired*subject
+           + lrgfont*portrait + lrgfont*discauth
+           + discauth*year
+           + year*subject, 
+           data = ols.train)
+```
+
+
+```{r}
 ##
-ols.2 = lm(logprice ~ Shape + school_pntg + prevcoll + authorlevel
+ols.2 = lm(logprice ~ Shape + school_pntg + prevcoll
            + dealer*Interm + dealer*paired + dealer*artistliving
+           
+           + dealer*diff_origin + dealer*authorstyle + dealer*Surface + dealer*discauth + dealer*year
+           
            + artistliving*endbuyer + artistliving*finished
            + diff_origin*Surface + diff_origin*portrait  + diff_origin*still_life + diff_origin*prevcoll
            + artistliving*year + artistliving*endbuyer
@@ -651,8 +645,8 @@ ols.2 = lm(logprice ~ Shape + school_pntg + prevcoll + authorlevel
            + finished*discauth
            + lrgfont*discauth, 
              data = paintings_train_2)
-
 summary(ols.2)
+summary(ols.2)$r.squared
 
 predictions = as.data.frame(
   exp(predict(ols.2, newdata=paintings_test_2, type = "response")))
