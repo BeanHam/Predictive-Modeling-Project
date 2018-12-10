@@ -28,10 +28,6 @@ set.seed(10)
 load("paintings_train.Rdata")
 load("paintings_test.Rdata")
 
-#paris_paintings <- read.csv("~/STA521 - Fall2018/Final Project/paris_paintings.csv", comment.char="#", #stringsAsFactors=FALSE)
-#
-#uniquetest = unique(paintings_test, margin = 1)
-#uniquedata = unique(paris_paintings, margin = 1)
 ```
 
 ```{r}
@@ -300,7 +296,7 @@ ols.2 = lm(logprice ~ Shape + school_pntg
 ```{r}
 ##
 
-ols.2 = lm(logprice ~ Shape + school_pntg + prevcoll 
+ols.2 = lm(logprice ~ Shape + school_pntg + prevcoll + authorlevel
            + dealer*Interm + dealer*paired + dealer*artistliving
            + artistliving*endbuyer + artistliving*finished
            + diff_origin*Surface + diff_origin*portrait  + diff_origin*still_life + diff_origin*prevcoll
