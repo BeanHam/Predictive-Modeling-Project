@@ -237,7 +237,7 @@ paintings_test_2 = mice::complete(micetest) %>%
 ###############################################################
 
 ## linear model
-```{r}
+```{r, echo = FALSE, eval=FALSE}
 ols.train = paintings_train_2 %>% dplyr::select(-price)
 ols.test = paintings_test_2 %>% dplyr::select(-price, -logprice)
 
@@ -252,7 +252,7 @@ summary(AIC)
 ```
 
 ## AIC output
-```{r}
+```{r, echo=FALSE, eval=FALSE}
 ols.2 = lm(logprice ~ Shape + school_pntg 
            + dealer*diff_origin + dealer*artistliving + dealer*authorstyle + dealer*Surface + dealer*discauth + dealer*year + dealer*Interm 
            + diff_origin*authorstyle + diff_origin*Interm + diff_origin*engraved + diff_origin*prevcoll + diff_origin*paired + diff_origin*lrgfont + diff_origin*subject 
@@ -272,70 +272,27 @@ ols.2 = lm(logprice ~ Shape + school_pntg
 
 ## Modification
 ```{r}
-##
-
-ols.2 = lm(logprice ~ Shape + school_pntg + prevcoll
-           + dealer*Interm + dealer*paired + dealer*artistliving
-           + artistliving*endbuyer + artistliving*finished
+ols.2 = lm(logprice ~ Shape + school_pntg
+           + dealer*Interm + dealer*paired + dealer*artistliving + dealer*diff_origin
+           + artistliving*endbuyer + artistliving*finished + artistliving*year
            + diff_origin*Surface + diff_origin*portrait  + diff_origin*still_life + diff_origin*prevcoll
-           + artistliving*year + artistliving*endbuyer
+           + endbuyer*Surface + endbuyer*paired + endbuyer*year
+           + authorstyle*portrait
            + Interm*lrgfont
-           + paired*lrgfont + paired*author + paired*subject + paired*discauth
+           + paired*lrgfont + paired*subject + paired*discauth + paired*author
            + finished*discauth
-           + lrgfont*discauth, 
-             data = paintings_train_2)
+           + lrgfont*discauth
+           + prevcoll*dealer + prevcoll*school_pntg + prevcoll*Interm
+             ,data = paintings_train_2)
 
-summary(ols.2)
-
-predictions = as.data.frame(
-  exp(predict(ols.2, newdata=paintings_test_2, type = "response")))
- 
- colnames(predictions) = "fit"
- save(predictions, file="predict-test.Rdata")
-
-```
-
-
-```{r}
-ols.2 = lm(logprice ~ Shape + school_pntg + prevcoll + dealer*Interm + dealer*paired + dealer*finished + diff_origin*portrait + artistliving*endbuyer + Interm*lrgfont + Surface*diff_origin + paired*lrgfont + paired*discauth + diff_origin*authorstyle + diff_origin*still_life + finished*discauth + lrgfont*discauth + artistliving*finished + Interm*portrait + dealer*artistliving, data = paintings_train_2)
+summary(ols.2)$r.squared
 
 predictions = as.data.frame(
   exp(predict(ols.2, newdata=paintings_test_2, type = "response")))
-
 colnames(predictions) = "fit"
 save(predictions, file="predict-test.Rdata")
 
 ```
-
-
-
-## Linear
-```{r}
-ols.train = paintings_train_2 %>% dplyr::select(-price)
-ols.test = paintings_test_2 %>% dplyr::select(-price, -logprice)
-
-## JZS prior
-bma1 = bas.lm(logprice~(dealer + school_pntg + diff_origin + artistliving + endbuyer + authorstyle 
-                     + Interm + Shape + Surface + engraved + prevcoll + paired + finished + lrgfont 
-                     + portrait + discauth + still_life + year + author + subject)^2, 
-             data=ols.train, 
-             method="MCMC", 
-             prior = "JZS",
-             modelprior=uniform(),
-             MCMC.iterations=20000, 
-             thin = 10,
-             force.heredity=FALSE)
-
-BPM1 = predict(bma1, estimator = "BPM")
-
-
-predictions = as.data.frame(
-  exp(pred.bas(BPM1, 
-              newdata=ols.test)))
-colnames(predictions) = "fit"
-save(predictions, file="predict-test.Rdata")
-```
-
 
 
 ## Negative Binomial
@@ -375,12 +332,13 @@ save(predictions, file="predict-test.Rdata")
 ## boosting
 ```{r}
 library(gbm)
-boosting = gbm(logprice ~. -price,
+boosting = gbm(logprice ~.,
                data = paintings_train_2,
                distribution = "gaussian",
                n.trees = 5000,
-               interaction.depth = 4)
+               interaction.depth = 2)
 ```
+
 
 ```{r}
 predictions = as.data.frame(
@@ -447,7 +405,8 @@ evaluate=function(x){
   }
 }
 
-author=paintings_train %>% select(author,logprice) %>% group_by(author) %>% summarise(ave=mean(logprice)) %>% mutate(authorlevel=sapply(ave, evaluate)) %>% select(-ave)
+author=paintings_train %>% dplyr::select(author,logprice) %>% group_by(author) %>% summarise(ave=mean(logprice)) %>% mutate(authorlevel=sapply(ave, evaluate)) %>% dplyr::select(-ave)
+
 paintings_train=left_join(paintings_train,author,by="author")
 paintings_test=left_join(paintings_test,author,by="author")  %>% mutate(authorlevel=ifelse(is.na(authorlevel),0,authorlevel))
 ```
@@ -679,7 +638,7 @@ summary(ols.2)
 
 ```{r}
 ##
-ols.2 = lm(logprice ~ Shape + school_pntg + prevcoll
+ols.2 = lm(logprice ~ Shape + school_pntg
            + dealer*Interm + dealer*paired + dealer*artistliving + dealer*diff_origin
            + artistliving*endbuyer + artistliving*finished + artistliving*year
            + diff_origin*Surface + diff_origin*portrait  + diff_origin*still_life + diff_origin*prevcoll
@@ -688,8 +647,9 @@ ols.2 = lm(logprice ~ Shape + school_pntg + prevcoll
            + Interm*lrgfont
            + paired*lrgfont + paired*subject + paired*discauth + paired*author
            + finished*discauth
-           + lrgfont*discauth,
-             data = paintings_train_2)
+           + lrgfont*discauth
+           + prevcoll*dealer + prevcoll*school_pntg + prevcoll*Interm
+             ,data = paintings_train_2)
 
 fitted = exp(predict(ols.2, newdata=paintings_test_2, type = "response"))
 rmse(fitted, paintings_test$price)
