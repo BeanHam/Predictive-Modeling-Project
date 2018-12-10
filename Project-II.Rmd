@@ -293,8 +293,9 @@ ols.2 = lm(logprice ~ Shape + school_pntg
 ## Modification
 ```{r}
 ##
+
 ols.2 = lm(logprice ~ Shape + school_pntg + prevcoll 
-           + dealer*finished  + dealer*Interm + dealer*paired + dealer*artistliving
+           + dealer*Interm + dealer*paired + dealer*artistliving
            + diff_origin*Surface + diff_origin*portrait  + diff_origin*still_life + diff_origin*prevcoll
            + artistliving*year + artistliving*endbuyer + artistliving*finished
            + Interm*lrgfont + Interm*portrait
@@ -302,6 +303,8 @@ ols.2 = lm(logprice ~ Shape + school_pntg + prevcoll
            + finished*discauth
            + lrgfont*discauth, 
             data = paintings_train_2)
+
+summary(ols.2)
 
 predictions = as.data.frame(
   exp(predict(ols.2, newdata=paintings_test_2, type = "response")))
