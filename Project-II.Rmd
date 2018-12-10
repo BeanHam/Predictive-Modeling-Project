@@ -635,7 +635,7 @@ ols.2 = lm(logprice ~ Shape + school_pntg
 ols.2 = lm(logprice ~ Shape + school_pntg + prevcoll
            + dealer*Interm + dealer*paired + dealer*artistliving
            
-           + dealer*diff_origin + dealer*authorstyle + dealer*Surface + dealer*discauth + dealer*year
+           + dealer*diff_origin + dealer*authorstyle + dealer*Surface + dealer*discauth
            
            + artistliving*endbuyer + artistliving*finished
            + diff_origin*Surface + diff_origin*portrait  + diff_origin*still_life + diff_origin*prevcoll
@@ -645,11 +645,13 @@ ols.2 = lm(logprice ~ Shape + school_pntg + prevcoll
            + finished*discauth
            + lrgfont*discauth, 
              data = paintings_train_2)
+predictions = as.data.frame(
+  exp(predict(ols.2, newdata=paintings_test_2, type = "response")))
+
 summary(ols.2)
 summary(ols.2)$r.squared
 
-predictions = as.data.frame(
-  exp(predict(ols.2, newdata=paintings_test_2, type = "response")))
+
  
  colnames(predictions) = "fit"
  save(predictions, file="predict-test.Rdata")
