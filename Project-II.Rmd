@@ -30,12 +30,37 @@ load("paintings_test.Rdata")
 ```
 
 ## Manually Data Cleaning
+```{r}
+evaluate=function(x){
+  if(x<=3.5){
+    authorlevel=0
+  }else if(x<=5){
+    authorlevel=1
+  }else if(x<=7){
+    authorlevel=2
+  }else{
+    authorlevel=3
+  }
+}
+
+author=paintings_train %>% 
+   dplyr::select(author,logprice) %>% 
+   group_by(author) %>% 
+   summarise(ave=mean(logprice)) %>% 
+   mutate(authorlevel=sapply(ave, evaluate)) %>% 
+   dplyr::select(-ave)
+
+paintings_train=left_join(paintings_train,author,by="author")
+paintings_test=left_join(paintings_test,author,by="author")  %>% mutate(authorlevel=ifelse(is.na(authorlevel),0,authorlevel))
+```
+
 
 ```{r, echo=FALSE}
 ## Remove Intuitively Useless Variables
  paintings_train_1 = paintings_train %>% 
    dplyr::select(-sale,
                  -count,
+                 -price,
                  -authorstandard,
                  -winningbidder,
                  -other,
@@ -82,7 +107,7 @@ load("paintings_test.Rdata")
           ifelse(str_detect(paintings_train$author,"Nicolas Berghem|N. Berghem"), "Nicolas Berghem", "other")))))))))) %>% as.factor(.),
      
      #authorlevel = as.factor(authorlevel),
-     price = as.integer(price),
+     #price = as.integer(price),
      dealer = as.factor(dealer),
      origin_author = as.factor(origin_author),
      origin_cat = as.factor(origin_cat),
@@ -118,7 +143,7 @@ load("paintings_test.Rdata")
      pastorale = as.factor(pastorale),
      finished = as.factor(finished)
    ) %>%  
-   .[,c(8, 1:7, 9:40)]
+   .[,c(8, 1:7, 9:39)]
 
 ```
 
@@ -133,6 +158,7 @@ paintings_train_2 = mice::complete(micetest) %>%
 paintings_test_1 = paintings_test %>% 
    dplyr::select(-sale,
                  -count,
+                 -price,
                  -authorstandard,
                  -winningbidder,
                  -other,
@@ -179,7 +205,7 @@ paintings_test_1 = paintings_test %>%
           ifelse(str_detect(paintings_test$author,"Nicolas Berghem|N. Berghem"), "Nicolas Berghem", "other")))))))))) %>% as.factor(.),
      
      #authorlevel = as.factor(authorlevel),
-     price= as.integer(logprice),
+     #price= as.integer(logprice),
      dealer = as.factor(dealer),
      origin_author = as.factor(origin_author),
      origin_cat = as.factor(origin_cat),
@@ -215,7 +241,7 @@ paintings_test_1 = paintings_test %>%
      pastorale = as.factor(pastorale),
      finished = as.factor(finished)
    ) %>%  
-   .[,c(8, 1:7, 9:40)]
+   .[,c(8, 1:7, 9:39)]
 
 ```
 
@@ -264,66 +290,6 @@ ols.2 = lm(logprice ~ Shape + school_pntg
            data = ols.train)
 ```
 
-## second time data imputation
-```{r}
-paintings_train_3 = paintings_train_1 %>% 
-   dplyr::select(logprice,
-                 dealer,
-                 school_pntg,
-                 diff_origin,
-                 artistliving,
-                 endbuyer,
-                 authorstyle,
-                 Interm,
-                 Shape,
-                 Surface,
-                 engraved,
-                 prevcoll,
-                 paired,
-                 finished,
-                 lrgfont,
-                 portrait,
-                 discauth,
-                 still_life,
-                 year,
-                 author, 
-                 subject)
-
-micetest = mice::mice(paintings_train_3, printFlag = FALSE)
-paintings_train_4 = mice::complete(micetest) %>% 
-  mutate(Interm = as.factor(Interm))
-
-### test
-paintings_test_3 = paintings_test_1 %>% 
-   dplyr::select(logprice,
-                 dealer,
-                 school_pntg,
-                 diff_origin,
-                 artistliving,
-                 endbuyer,
-                 authorstyle,
-                 Interm,
-                 Shape,
-                 Surface,
-                 engraved,
-                 prevcoll,
-                 paired,
-                 finished,
-                 lrgfont,
-                 portrait,
-                 discauth,
-                 still_life,
-                 year,
-                 author, 
-                 subject)
-
-micetest = mice::mice(paintings_test_3, printFlag = FALSE)
-paintings_test_4 = mice::complete(micetest) %>% 
-  mutate(Interm = as.factor(Interm))
-
-```
-
-
 ## Modification
 ```{r}
 ##
@@ -351,12 +317,10 @@ ols.2 = lm(logprice ~ Shape + school_pntg
 
 
 ```{r}
-ols.2 = lm(logprice ~ Shape + school_pntg + dealer*Interm + dealer*Surface + dealer*paired + dealer*finished + diff_origin*Surface + diff_origin*portrait + artistliving*endbuyer + Interm*Surface + Interm*lrgfont + Surface*lrgfont + Surface*still_life + Surface*discauth + prevcoll*finished + paired*lrgfont + paired*discauth + diff_origin*authorstyle + diff_origin*still_life + finished*discauth + lrgfont*discauth + artistliving*finished + Interm*portrait + dealer*artistliving + authorstyle*prevcoll, data = paintings_train_4)
-
-summary(ols.2)
+ols.2 = lm(logprice ~ Shape + school_pntg + prevcoll + dealer*Interm + dealer*paired + dealer*finished + diff_origin*portrait + artistliving*endbuyer + Interm*lrgfont + Surface*still_life + paired*lrgfont + paired*discauth + diff_origin*authorstyle + diff_origin*still_life + finished*discauth + lrgfont*discauth + artistliving*finished + Interm*portrait + dealer*artistliving, data = paintings_train_2)
 
 predictions = as.data.frame(
-  exp(predict(ols.2, newdata=paintings_test_4, type = "response")))
+  exp(predict(ols.2, newdata=paintings_test_2, type = "response")))
 
 colnames(predictions) = "fit"
 save(predictions, file="predict-test.Rdata")
