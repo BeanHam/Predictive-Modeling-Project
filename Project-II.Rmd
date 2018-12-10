@@ -291,7 +291,7 @@ ols.2 = lm(logprice ~ Shape + school_pntg
 
 
 ```{r}
-ols.2 = lm(logprice ~ Shape + school_pntg + dealer*Interm + dealer*paired + dealer*finished  + diff_origin*portrait + artistliving*endbuyer + Interm*lrgfont + paired*lrgfont + paired*discauth + diff_origin*authorstyle + diff_origin*still_life + finished*discauth + lrgfont*discauth + artistliving*finished + Interm*portrait + dealer*artistliving, data = paintings_train_2)
+ols.2 = lm(logprice ~ Shape + school_pntg + dealer*Interm + Surface + dealer*paired + dealer*finished  + diff_origin*portrait + artistliving*endbuyer + Interm*lrgfont + paired*lrgfont + paired*discauth + diff_origin*authorstyle + diff_origin*still_life + finished*discauth + lrgfont*discauth + artistliving*finished + Interm*portrait + dealer*artistliving, data = paintings_train_2)
 
 summary(ols.2)
 
