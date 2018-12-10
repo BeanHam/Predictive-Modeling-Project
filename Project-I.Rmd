@@ -30,6 +30,25 @@ load("paintings_train.Rdata")
 load("paintings_test.Rdata")
 ```
 
+```{r}
+evaluate=function(x){
+  if(x<=3.5){
+    authorlevel=0
+  }else if(x<=5){
+    authorlevel=1
+  }else if(x<=7){
+    authorlevel=2
+  }else{
+    authorlevel=3
+  }
+}
+
+author=paintings_train %>% dplyr::select(author,logprice) %>% group_by(author) %>% summarise(ave=mean(logprice)) %>% mutate(authorlevel=sapply(ave, evaluate)) %>% dplyr::select(-ave)
+
+paintings_train=left_join(paintings_train,author,by="author")
+
+paintings_test=left_join(paintings_test,author,by="author")  %>% mutate(authorlevel=ifelse(is.na(authorlevel),0,authorlevel))
+```
 
 ## Part I: Simple Model 
 
@@ -90,6 +109,7 @@ paintings_train_1 = paintings_train %>%
                 -lot,
                 -type_intermed) %>% 
   mutate(
+    authorlevel = as.factor(authorlevel),
     dealer = as.factor(dealer),
     origin_author = as.factor(origin_author),
     origin_cat = as.factor(origin_cat),
@@ -125,7 +145,7 @@ paintings_train_1 = paintings_train %>%
     pastorale = as.factor(pastorale),
     finished = as.factor(finished)
   ) %>%  
-  .[,c(8, 1:7, 9:38)]
+  .[,c(8, 1:7, 9:39)]
 
 ```
 
@@ -233,7 +253,7 @@ summary(BIC.ols)
 
 ## Combine AIC/BIC for OLS
 ```{r}
-ols.2 = lm(logprice ~ Shape + school_pntg + dealer*Interm + dealer*Surface + dealer*paired + dealer*finished + diff_origin*Surface + diff_origin*portrait + artistliving*endbuyer + Interm*Surface + Interm*lrgfont + Surface*lrgfont + Surface*still_life + Surface*discauth + prevcoll*finished + paired*lrgfont + paired*discauth + diff_origin*authorstyle + diff_origin*still_life + finished*discauth + lrgfont*discauth + artistliving*finished + Interm*portrait + dealer*artistliving + authorstyle*prevcoll, data = paintings_train_2)
+ols.2 = lm(logprice ~ Shape + school_pntg + authorlevel + dealer*Interm + dealer*Surface + dealer*paired + dealer*finished + diff_origin*Surface + diff_origin*portrait + artistliving*endbuyer + Interm*Surface + Interm*lrgfont + Surface*lrgfont + Surface*still_life + Surface*discauth + prevcoll*finished + paired*lrgfont + paired*discauth + diff_origin*authorstyle + diff_origin*still_life + finished*discauth + lrgfont*discauth + artistliving*finished + Interm*portrait + dealer*artistliving + authorstyle*prevcoll, data = paintings_train_2)
 
 summary(ols.2)
 
@@ -272,6 +292,7 @@ paintings_test_1 = paintings_test %>%
          -lot,
          -type_intermed) %>% 
   mutate(
+    authorlevel = as.factor(authorlevel),
     dealer = as.factor(dealer),
     origin_author = as.factor(origin_author),
     origin_cat = as.factor(origin_cat),
@@ -327,6 +348,10 @@ predictions = as.data.frame(
   exp(predict(ols.2, newdata=paintings_test_2, 
               interval = "pred")))
 
+predictions = as.data.frame(
+  exp(predict(ols.2, newdata=paintings_test_2, 
+              type = "response")))
+colnames(predictions) = "fit"
 save(predictions, file="predict-test.Rdata")
 ```
 
