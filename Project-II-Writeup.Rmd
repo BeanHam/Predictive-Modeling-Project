@@ -1,0 +1,51 @@
+---
+title: "Project-II-Writeup"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 1. Introduction (1 point if improved from before)
+  add previous intro with any edits
+
+In this study, the auction prices of paintings in 18th century Paris were examined. Specifically, we wish to understand the variables which affect the prices of the paintings, and then be able to predict auction prices based on characteristics of a certain painting. By fitting an appropriate model, we will also be creating a tool to help decide whether specific paintings that are either underpriced or overpriced given their realization of the covariates that were included in the model.
+
+One of the main challenges in building this model is to narrow down the number of covariates from the 59 canadidates in the original data set to less than 20 in the final model. This must be done in such a way that an undue amount of bias is not introduced, and overfitting is avoided. Another challenge is to properly deal with the messiness of the data, including both missingness, overly large number of levels, overly similar covariates, and discrepancies in data entries (e.g same category marked differently).
+
+The ability to explain the results and provide some recommendations to indivisuals without statistical background is equally important and challenging, since the primary audience for this analysis is intended to be art historians. The goal was therefore to balance predictive performance, model simplicity, and interprebility in order to create a pricing model for artwork in 18th century France.
+
+## 2. Exploratory data analysis (1 point if improved from before): 
+   
+## A) Data summary & cleaning
+To start with, we looked at the summary of the original trainig data. There are few numeric variables and a lot of binary variables. Some variables, such as `Interm`, `Surface`, `Height_in` etc. have mising values, which need to be taken care of. The followings steps are how we cleaned the data: 
+
+a. The first step we did was to get rid of intuitivelly useless variables to reduce dimention, including: `lot`, `sale`, `price`, `count`, `subject`, `authorstandard`, `author`, `winningbidder`, and `other`. From the summary table, the `count` variable has all 1's; the `other` variable does not convey useful information; the other variables, such as `names` and `subjects`, are not useful in predicting the response variable (such as names). From the table of unique values we can see that some variables have thousands of unique values. Therefore, we can remove them in the first step.
+
+b. By further screening the variables, we found out that `Surface` and `Surface_Rnd`, `Surface_Rect` are corerlated, which are based on the value of `Height_in`, `Width_in`, and `Diam_in`. We decided to use `Surface` in our initial model. The same issue happened to `material`, `mat`, and `materialCat`. The latter one recodes the previous one. Therefore, we used `materialCat`. We applied the same strategy to keep `landsALL` and get rid of other variables related with landscape. 
+
+c. For those variables that have multiple levels, to be consistent with how the data was originally coded, we recoded the missing levels as "X", which stands for "no information". For `materialCat` and `Shape`, since there are so many levels, we grouped some levels with few observations together, coded as "other" group. The rest binary vairables are changed into factor.
+
+d. Then we dealt with the missing values in `Surface` and `Interm`. We used the package "mice" to address this problem, which uses the observed values in the dataset to impute the missing values. It prevents directly throwing away the missing values, which results in lossing a large amont of information for prediction.
+
+e. The variable `subject` also contains a lot of levels, potentially with many observations representing the same thing but simply expressed in different ways (i.e. different spellings, letter capitalization). Strings of the same meaning are detected from subjects and recatogorized together. Those levels with more than 20 observations are kept while all others are put together under other.
+
+f. On top of the previous steps, we also recategorized the authors since many authors have too few paintings but were still counted as a level in the categorical variable. Only the authors with more than 10 paintings are kept as a distinct level, and all others are merged into the `other` level. 
+
+## B). Plots
+Then we analyed the relationship between those left features and the response variable. With the scatter plots, we can roughly determine which variables can be put into the initial model. For categorical variables, we want to check if the `logprice` spans different ranges in different levels. For numeric variables, we want to check if there is a clear relationship between them and `logprice`.  
+
+For numeric variables, we see that `Surface` and `nfigures` seem to show some weak but positive relationship with `logprice`. Since there are several extremely large values in `position` (potentially outliers), it is hard to see that real pattern between the majority of points and `logprice`. But we'll keep it in the model first.
+
+Since there are 33 categorical variables, we don't show the boxplots for all of them. But applied the same method to check all the categorical variables. The following variables show some differences in `logprice` at different levels (not considering the magnitude of the difference at this time): `dealer`, `origin_author`, `origin_cat`, `school_pntg`, `diff_origin`, `authorstyle`, `endbuyer`, `Interm`, `Shape`, `materialCat`, `engraved`, `prevcoll`, `figures`, `finished`, `Irgfont`, `othgenre`, `discauth`, and `still_life`.
+
+If we were to choose 10 best predictive variables for predicting, we would consider the magnitude of differences and the strength of relationships. The 10 variables we choose are: `Surface`, `dealer`, `school_pntg`, `diff_origin`, `authorstyle`, `endbuyer`, `Interm`, `prevcoll`, `engraved`, `Irgfont`.
+
+##3. Discussion of preliminary model Part I (5 points)
+Discuss performance based on leader board results and suggested refinements.
+
+The overall characteristics of the model that we built in part I were: relatively lower bias, reasonable coverage and higher rmse, comparing to other teams. The methodologies used to conclude at the first model included EDA analyses, BAS, stepwise selection with AIC and BIC, which doesn't do an exhausive search for all possible models, thus the true model and the best model for prediction might not have been captured.
+
+Since there's inherently a trade off between  bias and rmse, it is reasonale that we were able to get a bias value on the lower side while rmse unfortunately was on the higher end. There is room for both values, however, to be improved with a better model, potentially a model other than a linear one, or through deeper data cleaning. Next, besides more data cleaning and re-coding, we will be focusing on models like tree/forest methods, as well as more development on linear models.
+
