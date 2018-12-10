@@ -662,6 +662,9 @@ summary(ols.2)
 ##
 ols.2 = lm(logprice ~ Shape + school_pntg + prevcoll
            + dealer*Interm + dealer*paired + dealer*artistliving
+           
+           + dealer*diff_origin
+           
            + artistliving*endbuyer + artistliving*finished
            + diff_origin*Surface + diff_origin*portrait  + diff_origin*still_life + diff_origin*prevcoll
            + artistliving*year + artistliving*endbuyer
@@ -678,6 +681,7 @@ rmse(fitted, paintings_test$price)
 
 predictions = as.data.frame(
   exp(predict(ols.2, newdata=paintings_test_2, type = "response")))
+
 summary(ols.2)
 summary(ols.2)$r.squared
 colnames(predictions) = "fit"
