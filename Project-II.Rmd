@@ -407,7 +407,33 @@ save(predictions, file="predict-test.Rdata")
 set.seed(10)
 load("paintings_train.Rdata")
 load("paintings_test.Rdata")
+
+paris_paintings <- read.csv("~/STA521 - Fall2018/Final Project/paris_paintings.csv", stringsAsFactors=FALSE)
 ```
+
+```{r}
+paintings_test = paintings_test %>% 
+   mutate(price = as.numeric(price))
+paris_paintings = paris_paintings %>% 
+   mutate(price = as.numeric(price))
+
+paris_paintings = paris_paintings[,-1] %>% unique()
+
+paris = paris_paintings %>% 
+   dplyr::select(lot, position, dealer, price) %>% 
+   unique() %>% 
+   group_by(lot, position, dealer) %>% 
+   summarise(price = mean(price, na.rm = TRUE))
+paintings_test2 = left_join(paintings_test, paris, by=c("lot", "position", "dealer"))
+paintings_test$price = paintings_test2$price.y
+```
+
+```{r}
+rmse = function(x, y){
+   sqrt(mean((x - y)^2))
+}
+```
+
 
 ## Manually Data Cleaning
 
@@ -636,9 +662,6 @@ summary(ols.2)
 ##
 ols.2 = lm(logprice ~ Shape + school_pntg + prevcoll
            + dealer*Interm + dealer*paired + dealer*artistliving
-           
-           + dealer*authorstyle + dealer*discauth
-           
            + artistliving*endbuyer + artistliving*finished
            + diff_origin*Surface + diff_origin*portrait  + diff_origin*still_life + diff_origin*prevcoll
            + artistliving*year + artistliving*endbuyer
@@ -647,15 +670,17 @@ ols.2 = lm(logprice ~ Shape + school_pntg + prevcoll
            + finished*discauth
            + lrgfont*discauth, 
              data = paintings_train_2)
+
+fitted = exp(predict(ols.2, newdata=paintings_test_2, type = "response"))
+rmse(fitted, paintings_test$price)
+
+
+
 predictions = as.data.frame(
   exp(predict(ols.2, newdata=paintings_test_2, type = "response")))
-
 summary(ols.2)
 summary(ols.2)$r.squared
-
-
- 
- colnames(predictions) = "fit"
- save(predictions, file="predict-test.Rdata")
+colnames(predictions) = "fit"
+save(predictions, file="predict-test.Rdata")
 
 ```
