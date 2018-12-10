@@ -118,7 +118,7 @@ load("paintings_test.Rdata")
      pastorale = as.factor(pastorale),
      finished = as.factor(finished)
    ) %>%  
-   .[,c(8, 1:7, 9:38)]
+   .[,c(8, 1:7, 9:40)]
 
 ```
 
@@ -215,7 +215,7 @@ paintings_test_1 = paintings_test %>%
      pastorale = as.factor(pastorale),
      finished = as.factor(finished)
    ) %>%  
-   .[,c(8, 1:7, 9:38)]
+   .[,c(8, 1:7, 9:40)]
 
 ```
 
@@ -268,12 +268,13 @@ ols.2 = lm(logprice ~ Shape + school_pntg
 ```{r}
 ##
 
-ols.2 = lm(logprice ~ Shape + school_pntg + prevcoll
+ols.2 = lm(logprice ~ Shape + school_pntg
            + dealer*finished + dealer*year + dealer*Interm + dealer*paired + dealer*artistliving
-           + diff_origin*subject + diff_origin*Surface + diff_origin*portrait + diff_origin*authorstyle + diff_origin*still_life
+           + diff_origin*subject + diff_origin*Surface + diff_origin*portrait + diff_origin*authorstyle + diff_origin*still_life + diff_origin*prevcoll
            + artistliving*year + artistliving*endbuyer + artistliving*finished
            + Interm*lrgfont + Interm*portrait
            + Surface*subject
+           + prevcoll*finished + prevcoll*engraved + prevcoll*authorstyle
            + paired*lrgfont + paired*discauth + paired*author + paired*subject
            + finished*discauth
            + lrgfont*discauth, 
@@ -290,7 +291,7 @@ ols.2 = lm(logprice ~ Shape + school_pntg + prevcoll
 
 
 ```{r}
-ols.2 = lm(logprice ~ Shape + school_pntg + prevcoll + Surface*diff_origin + dealer*Interm + dealer*paired + dealer*finished + diff_origin*portrait + artistliving*endbuyer + Interm*lrgfont + paired*lrgfont + paired*discauth + diff_origin*authorstyle + diff_origin*still_life + finished*discauth + lrgfont*discauth + artistliving*finished + Interm*portrait + dealer*artistliving, data = paintings_train_2)
+ols.2 = lm(logprice ~ Shape + school_pntg + dealer*Interm + dealer*paired + dealer*finished  + diff_origin*portrait + artistliving*endbuyer + Interm*lrgfont + paired*lrgfont + paired*discauth + diff_origin*authorstyle + diff_origin*still_life + finished*discauth + lrgfont*discauth + artistliving*finished + Interm*portrait + dealer*artistliving, data = paintings_train_2)
 
 summary(ols.2)
 
@@ -300,7 +301,8 @@ predictions = as.data.frame(
 colnames(predictions) = "fit"
 save(predictions, file="predict-test.Rdata")
 
-dealer*Interm + dealer*paired + dealer*finished + diff_origin*portrait +
+Surface*paired + Surface*lrgfont + Surface*year + Surface*author + Surface*subject
+
 ```
 
 
