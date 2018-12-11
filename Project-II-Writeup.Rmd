@@ -540,7 +540,7 @@ In terms of the final model that we fit, we have the rmse value at 1210.42 and b
 Lastly, since we aim at balancing the simplicity, interpretability and performance of the model, as well as the tidyness of the , certain levels of categorical variables are merged and interactions were removed from the model, even though the stepwise function suggested to include them. This could also negatively affect the rmse and bias of the final selected model, but would also add up the difficulty of using and understanding the model, thus we chose to slightly sacrifise the precision.
 
 
-### Model result: must include a selection and discussion of the top 10 valued  paintings in the validation data.
+### Model result:
 
 ```{r message=FALSE, warning=FALSE, echo = FALSE}
 valid_pred = predictions = as.data.frame(
@@ -579,5 +579,4 @@ The main improvements and adjustment we made to reach this result included deepe
 
 As far as the questions of interest of this particular study is concerned, we've learned that the auction price of a painting is not solely dependent on the artistic qualities of the painting itself. It also heavily depends on other factors involved in the auction process. For example, which types of endbuyers are intrigued by the painting, or which dealer the painting is auctioned from, can also significantly impact the final auction price.
 Even though most paintings with certain characteristics like large surface area end up with an auction price on the higher end, some paintings with exceptionally large area can be valued a lot less than expected, which ended up being an outlier. Therefore, it is crucial for historians to consider all features of a painting and decide how much each factor should be weighted when predicting the price.
-```
 
