@@ -1,6 +1,10 @@
 ---
-title: "Project-II-Writeup"
-output: pdf_document
+title: "STA 521 Final Project Part II"
+author: "Team 10:  Bin Han, Jingyi Zhang, Jonathan Klus"
+date: "12 December 2018"
+output:
+  pdf_document: default
+  word_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -30,7 +34,7 @@ load("paintings_test.Rdata")
 ```
 
 
-## Manually Data Cleaning
+## Data Cleaning
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 ## Remove Intuitively Useless Variables
@@ -232,30 +236,29 @@ paintings_test_2 = mice::complete(micetest) %>%
   mutate(Interm = as.factor(Interm))
 ```
 
-## 1. Introduction (1 point if improved from before)
+## 1. Introduction
 
 In this study, the auction prices of paintings in 18th century Paris were examined. Specifically, we wish to understand the variables which affect the prices of the paintings, and then be able to predict auction prices based on characteristics of a certain painting. By fitting an appropriate model, we will also be creating a tool to help decide whether specific paintings that are either underpriced or overpriced given their realization of the covariates that were included in the model.
 
 One of the main challenges in building this model is to narrow down the number of covariates from the 59 candidates in the original data set to less than 20 in the final model. This must be done in such a way that an undue amount of bias is not introduced, and overfitting is avoided. Another challenge is to properly deal with the messiness of the data, including both missingness, covariates with a very large number of levels, multicollinearity in the data, and discrepancies in data entries (e.g. same category marked differently).
 
-The ability to explain the results and provide some recommendations to individuals without statistical background is equally important and challenging, since the primary audience for this analysis is intended to be art historians. The goal was therefore to balance predictive performance, model simplicity, and interpretability in order to create a pricing model for artwork in 18th century France.
+The ability to explain the results and provide recommendations to individuals without statistical background is equally important and challenging, since the primary audience for this analysis is intended to be art historians. The goal was therefore to balance predictive performance, model simplicity, and interpretability in order to create a pricing model for artwork in 18th century France.
 
-## 2. Exploratory data analysis (1 point if improved from before): 
+## 2. Exploratory data analysis 
    
 ## A) Data summary & cleaning
-To start with, we looked at the summary of the original trainig data. There are few numeric variables and a lot of binary variables. Some variables, such as `Interm`, `Surface`, `Height_in` etc. have mising values, which need to be taken care of. The followings steps are how we cleaned the data: 
+To begin, we looked at the summary of the original training data. There are few numeric variables and a lot of binary variables. Some variables, such as `Interm`, `Surface`, `Height_in` etc. have mising values, which needed to be imputed. The following steps were taken to clean the data: 
 
-a. The first step we did was to get rid of intuitivelly useless variables to reduce dimention, including: `lot`, `sale`, `price`, `count`, `subject`, `authorstandard`, `author`, `winningbidder`, and `other`. From the summary table, the `count` variable has all 1's; the `other` variable does not convey useful information; the other variables, such as `names` and `subjects`, are not useful in predicting the response variable (such as names). From the table of unique values we can see that some variables have thousands of unique values. Therefore, we can remove them in the first step.
+a. The first step was to reduce the dimensionality of the problem by removing variables that were deemed not to be useful due to their being summarized more succinctly by another similar variable, having too many levels, or not containing any useful information (i.e. taking on the same value for each observation). These variables included: `lot`, `sale`, `price`, `count`, `subject`, `authorstandard`, `winningbidder`, and `other`. From the summary table, the `count` variable has all 1's; the `other` variable does not convey useful information; the other variables, such as `names` and `subjects`, are not useful in predicting the response variable (such as names). From the table of unique values we can see that some categorical variables have over 1,000 unique values. Therefore, we chose to remove them in the first step. The alternative to this would be to attempt to recode the variable in an effort to preserve some of its information for the model. In Part I, the `author` variable receive this treatment, but in the second iteration of this model, we chose to recode based on the perceived value of the names of several top artists.  Only the authors with more than 10 paintings are kept as a distinct level, and all others were coded as `other`. 
 
-b. By further screening the variables, we found out that `Surface` and `Surface_Rnd`, `Surface_Rect` are correlated, which are based on the value of `Height_in`, `Width_in`, and `Diam_in`. We decided to use `Surface` in our initial model. The same issue happened to `material`, `mat`, and `materialCat`. The latter one recodes the previous one. Therefore, we used `materialCat`. We applied the same strategy to keep `landsALL` and get rid of other variables related with landscape. 
+b. By further screening the variables, we found out that `Surface` and `Surface_Rnd`, `Surface_Rect` are highly correlated, as they are all measurements based on the value of `Height_in`, `Width_in`, and `Diam_in`. We decided to use `Surface` in our initial model since it contained the most information about all of these measurements. The same issue happened to `material`, `mat`, and `materialCat`. `materialCat` recodes the other two more succinctly, therefore, we used `materialCat` for ease of modeling and interpretation. We applied the same strategy to keep `landsALL` and get rid of other variables related with landscape. 
 
-c. For those variables that have multiple levels, to be consistent with how the data was originally coded, we recoded the missing levels as "X", which stands for "no information". For `materialCat` and `Shape`, since there are so many levels, we grouped some levels with few observations together, coded as "other" group. The rest binary vairables are changed into factor.
+c. This data contained a great deal of structurally missing values (i.e. missingness resulting from how the researchers coded the data, rather than truly unavailable or omitted information). For those variables that have multiple levels, to be consistent with how the data was originally coded, we recoded the missing levels as "X", which stands for either "other" or "no information" in the code book, depending upon the variable in question. For `materialCat` and `Shape`, since there are so many levels, we grouped some levels with few (<10) observations together, coded as the "other" group. The remaining binary vairables were converted into factors.
 
-d. Then we dealt with the missing values in `Surface` and `Interm`. We used the package "mice" to address this problem, which uses the observed values in the dataset to impute the missing values. It prevents directly throwing away the missing values, which results in lossing a large amont of information for prediction.
+d. The remaining data issue was how to deal with missing values in the numeric continuous variable `Surface` and the binary variable `Interm`. The `mice` package (Multivariate Imputation by Chained Equations) was used to address this problem. It uses the observed values of other covariates in the dataset to create a model to impute the missing values. This method is superior to complete case analysis, which would result in losing an unacceptably large amount of data, as well as simpler imputation methods (i.e. imputing the mean of a given covariate to replace missing values).
 
-e. The variable `subject` also contains a lot of levels, potentially with many observations representing the same thing but simply expressed in different ways (i.e. different spellings, letter capitalization). Strings of the same meaning are detected from subjects and recatogorized together. Those levels with more than 20 observations are kept while all others are put together under other.
+e. The variable `subject` also contained many levels, potentially with many observations representing the same realization but expressed differently (i.e. varied spelling and capitalization). Strings of the same meaning were detected by observation and recatogorized. From the resulting values, levels with more than 20 observations were kept while all others were coded as `other`.
 
-f. On top of the previous steps, we also recategorized the authors since many authors have too few paintings but were still counted as a level in the categorical variable. Only the authors with more than 10 paintings are kept as a distinct level, and all others are merged into the `other` level. 
 
 ```{r}
 kable(paintings_train_2 %>% 
@@ -284,9 +287,9 @@ graph_categorical = paintings_train_2 %>%
          -nfigures,
          -logprice)
 ```
-Then we analyed the relationship between those left features and the response variable. With the scatter plots, we can roughly determine which variables can be put into the initial model. For categorical variables, we want to check if the `logprice` spans different ranges in different levels. For numeric variables, we want to check if there is a clear relationship between them and `logprice`.  
+The relationship between the remaining features and the response `logprice` was then further examined . Using scatter plots, we can roughly determine which variables should be put into the initial model due to their, upon visual inspection, appearing to have a linear relationship with `logprice`. For categorical variables, we want to check if the `logprice` spans different ranges in different levels by plotting them using boxplots. For numeric variables, we want to check if there is a clear relationship between them and `logprice`.  
 
-For numeric variables, we see that `Surface` and `nfigures` seem to show some weak but positive relationship with `logprice`. Since there are several extremely large values in `position` (potentially outliers), it is hard to see that real pattern between the majority of points and `logprice`. But we'll keep it in the model first.
+For numeric variables, we see that `Surface` and `nfigures` seem to show a weak but positive relationship with `logprice`. Since there are several extremely large values in `position` (potentially outliers), it is hard to see that real pattern between the majority of points and `logprice`. These variables will be kept in the initial model, but may potentially be removed later in the development process.
 
 ```{r num_eda}
 ## numeric
@@ -300,7 +303,7 @@ for (i in 1:ncol(graph_numeric)){
 
 ```
 
-Since there are 33 categorical variables, we don't show the boxplots for all of them. But applied the same method to check all the categorical variables. The following variables show some differences in `logprice` at different levels (not considering the magnitude of the difference at this time): `subject`, `author`, `dealer`, `origin_author`, `origin_cat`, `school_pntg`, `diff_origin`, `authorstyle`, `endbuyer`, `Interm`, `Shape`, `materialCat`, `engraved`, `prevcoll`, `figures`, `finished`, `Irgfont`, `othgenre`, `discauth`, and `still_life`.
+Since there are 33 categorical variables, we don't show the boxplots for all of them. But we have applied the same method to check all the categorical variables. The following variables show some differences in `logprice` at different levels (not yet considering the magnitude of the difference at this time): `subject`, `author`, `dealer`, `origin_author`, `origin_cat`, `school_pntg`, `diff_origin`, `authorstyle`, `endbuyer`, `Interm`, `Shape`, `materialCat`, `engraved`, `prevcoll`, `figures`, `finished`, `Irgfont`, `othgenre`, `discauth`, and `still_life`.
 
 ```{r cat_eda}
 ## categorical
@@ -313,15 +316,15 @@ for (i in 1:12){
 
 ```
 
-If we were to choose best predictive variables for predicting, we would consider the magnitude of differences and the strength of relationships. The 10 variables we choose are: `Surface`, `subjetc`, `author`, `dealer`, `school_pntg`, `diff_origin`, `authorstyle`, `endbuyer`, `Interm`, `prevcoll`, `engraved`, `Irgfont`.
+If we were to choose best predictive variables for predicting, we would consider the magnitude of differences and the strength of relationships. The 10 variables we chose are: `Surface`, `subjetc`, `author`, `dealer`, `school_pntg`, `diff_origin`, `authorstyle`, `endbuyer`, `Interm`, `prevcoll`, `engraved`, `Irgfont`.
 
-For numeric variables, we note that `Surface` and `nfigures` appear to have a weak but positive relationship with `logprice`. Since there are several extremely large values in `position` (potential outliers), it is difficult to know if there is a truly useful relationship here between the majority of points and `logprice`. But we will keep it in the initial model for now.
+For numeric variables, we note that `Surface` and `nfigures` appear to have a weak but positive relationship with `logprice`. Since there are several extremely large values in `position` (potential outliers), it is difficult to know if there is a truly useful relationship here between the majority of points and `logprice`. 
 
 
 
-##3. Discussion of preliminary model Part I (5 points)
+##3. Discussion of preliminary model
 
-The overall characteristics of the model that we built in part I were: relatively lower bias, reasonable coverage and higher rmse, comparing to other teams. The methodologies used to conclude at the first model included EDA analyses, BAS, stepwise selection with AIC and BIC, which doesn't do an exhausive search for all possible models, thus the true model and the best model for prediction might not have been captured.
+The overall characteristics of the model that we built in part I were: relatively lower bias, reasonable coverage, and high RMSE compared to other teams. The methodology used to arrive at the first model included EDA analyses, BAS, stepwise selection with AIC and BIC, which doesn't do an exhausive search for all possible models, thus the true model and the best model for prediction might not have been captured.
 
 Since there's inherently a trade off between  bias and rmse, it is reasonale that we were able to get a bias value on the lower side while rmse unfortunately was on the higher end. There is room for both values, however, to be improved with a better model, potentially a model other than a linear one, or through deeper data cleaning. Next, besides more data cleaning and re-coding, we will be focusing on models like tree/forest methods, as well as more development on linear models.
 
@@ -329,18 +332,18 @@ Since there's inherently a trade off between  bias and rmse, it is reasonale tha
 ## 4.  Development of the final model
 ### Final model
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
-ols.2 = lm(logprice ~ Shape + school_pntg
-           + dealer*Interm + dealer*paired + dealer*artistliving + dealer*diff_origin
-           + artistliving*endbuyer + artistliving*finished + artistliving*year
-           + diff_origin*Surface + diff_origin*portrait  + diff_origin*still_life + diff_origin*prevcoll
-           + endbuyer*Surface + endbuyer*paired + endbuyer*year
-           + authorstyle*portrait
-           + Interm*lrgfont
-           + paired*lrgfont + paired*subject + paired*discauth + paired*author
-           + finished*discauth
-           + lrgfont*discauth
-           + prevcoll*dealer + prevcoll*school_pntg + prevcoll*Interm
-             ,data = paintings_train_2)
+ols.2 = lm(logprice ~ Shape + school_pntg +
+           dealer*Interm + dealer*paired + dealer*artistliving + dealer*diff_origin +
+           artistliving*endbuyer + artistliving*finished + artistliving*year +
+           diff_origin*Surface + diff_origin*portrait  + diff_origin*still_life + diff_origin*prevcoll +
+           endbuyer*Surface + endbuyer*paired + endbuyer*year +
+           authorstyle*portrait +
+           Interm*lrgfont +
+           paired*lrgfont + paired*subject + paired*discauth + paired*author +
+           finished*discauth +
+           lrgfont*discauth +
+           prevcoll*dealer + prevcoll*Interm,
+           data = paintings_train_2)
 ```
 
 ```{r}
