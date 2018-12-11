@@ -406,18 +406,6 @@ predictions_test = as.data.frame(
               interval = "pred")))
 
 save(predictions_test, file="predict-test.Rdata")
-
-```
-
-## Predict with Validation Set
-```{r}
-predictions_valid = as.data.frame(
-  exp(predict(ols.2, 
-              newdata=paintings_valid_2, 
-              interval = "pred")))
-
-save(predictions_valid, file="predictions.Rdata")
-
 ```
 
 
