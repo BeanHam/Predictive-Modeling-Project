@@ -330,6 +330,7 @@ rf = randomForest(logprice ~ .,
                   importance = TRUE,
                   mtry = round(sqrt(ncol(rf.train) -1), digits = 0))
 
+
 predictions = as.data.frame(
   exp(predict(rf, 
               newdata=rf.test)))
@@ -339,19 +340,22 @@ save(predictions, file="predict-test.Rdata")
 
 ## boosting
 ```{r}
-library(gbm)
-boosting = gbm(logprice ~.,
-               data = paintings_train_2,
-               distribution = "gaussian",
-               n.trees = 5000,
-               interaction.depth = 6)
+library(xgboost)
 
-#boost = xgboost::xgboost(data = paintings_train_2, logprice ~ .,)
+xg.train = sparse.model.matrix(logprice ~ ., data = paintings_train_2)[,-1]
+xg.response = paintings_train_2[,"logprice"]
+boost = xgboost::xgboost(data = xg.train,
+                         label = xg.response,
+                         objective = "reg:linear",
+                         nrounds = 10,
+                         nthread = 2)
+
+xg.test = sparse.model.matrix(~ ., data = paintings_test_2[,-1])[,-1]
+
 
 predictions = as.data.frame(
-  exp(predict(boosting, 
-              newdata=paintings_test_2,
-              n.trees = 5000,
+  exp(predict(boost, 
+              newdata=xg.test,
               type = "response")))
 colnames(predictions) = "fit"
 save(predictions, file="predict-test.Rdata")
