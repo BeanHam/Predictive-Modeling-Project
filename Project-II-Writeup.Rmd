@@ -390,7 +390,7 @@ The relationship between the remaining features and the response `logprice` was 
 
 For numeric variables, we see that `Surface` and `nfigures` seem to show a weak but positive relationship with `logprice`. Since there are several extremely large values in `position` (potentially outliers), it is hard to see that real pattern between the majority of points and `logprice`. These variables will be kept in the initial model, but may potentially be removed later in the development process.
 
-```{r num_eda, include = FALSE}
+```{r num_eda, echo = FALSE}
 ## numeric
 par(mfrow = c(2, 2))
 for (i in 1:ncol(graph_numeric)){
@@ -404,7 +404,7 @@ for (i in 1:ncol(graph_numeric)){
 
 Since there are 33 categorical variables, we don't show the boxplots for all of them. But we have applied the same method to check all the categorical variables. The following variables show some differences in `logprice` at different levels (not yet considering the magnitude of the difference at this time): `subject`, `author`, `dealer`, `origin_author`, `origin_cat`, `school_pntg`, `diff_origin`, `authorstyle`, `endbuyer`, `Interm`, `Shape`, `materialCat`, `engraved`, `prevcoll`, `figures`, `finished`, `Irgfont`, `othgenre`, `discauth`, and `still_life`.
 
-```{r cat_eda, include=FALSE}
+```{r cat_eda, echo =FALSE}
 ## categorical
 par(mfrow = c(2,3))
 for (i in 1:12){
