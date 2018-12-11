@@ -27,6 +27,7 @@ suppressWarnings(library(stringr))
 set.seed(10)
 load("paintings_train.Rdata")
 load("paintings_test.Rdata")
+load("paintings_validation.Rdata")
 ```
 
 ## Manually Data Cleaning
@@ -231,6 +232,109 @@ paintings_test_2 = mice::complete(micetest) %>%
   mutate(Interm = as.factor(Interm))
 ```
 
+## Clean Validation Set
+```{r, echo=FALSE}
+paintings_valid_1 = paintings_validation %>% 
+   dplyr::select(-sale,
+                 -count,
+                 -price,
+                 -authorstandard,
+                 -winningbidder,
+                 -other,
+                 -Height_in,
+                 -Width_in,
+                 -Surface_Rect,
+                 -Diam_in,
+                 -Surface_Rnd,
+                 -material,
+                 -mat,
+                 -lands_sc,
+                 -lands_elem,
+                 -lands_figs,
+                 -lands_ment,
+                 -lot,
+                 -winningbiddertype,
+                 -type_intermed) %>% 
+   mutate(
+     subject = ifelse(str_detect(paintings_validation$subject,"Paysages|paysages|Paysage|paysage"), "Paysage",
+           ifelse(str_detect(paintings_validation$subject,"Saint|Saints|saint|saints|Notre Seigneur|NS|Notre-Seigneur|N.S.|JC|J.C.|Jesus-Christ|Jesus Christ|Assomption|Vierge|vierge|Vierges|vierges|martyre|Martyre"), "Saint",
+           ifelse(str_detect(paintings_validation$subject,"Portrait|Portraits|portrait|portraits"), "Portrait",
+           ifelse(str_detect(paintings_validation$subject,"Marine|marine|Marines|marines"), "Marine",
+           ifelse(str_detect(paintings_validation$subject,"Bustes|bustes|Buste|buste"), "Buste", 
+           ifelse(str_detect(paintings_validation$subject,"Fruits|fruits|Fruit|fruit|Fleurs|flures|Fleur|fleur|feuille|Feuille|feuilles|Feuilles"), "Fruit$Flower", 
+           ifelse(str_detect(paintings_validation$subject,"Sujets|sujets|Sujet|sujet"), "Sujet", 
+           ifelse(str_detect(paintings_validation$subject,"Hommes|Homme|hommes|homme|L'Homme|Femmes|Femme|femmes|femme|Cavaliers|cavaliers|Cavalier|cavalier|Enfants|enfants|Enfant|enfant|L'Enfant|L'enfant|Mariage|mariage|Dame|Dames|dame|dames|Marchande|Marchand|marchand|marchande|Officier|Officiers|officier|officiers"), "People",
+           ifelse(str_detect(paintings_validation$subject,"Arch|Architecture|Architectures|architecture|architectures|interieur|Interieur|L'interieur|L'Interieur"), "Arch", 
+           ifelse(str_detect(paintings_validation$subject,"bataille|Bataille|batailles|Batailles|Combat"), "Battle",
+           ifelse(str_detect(paintings_validation$subject,"Adoration|adoration|Adorations|adoration|L'Adoration|L'adoration|Amour|L'Amour|L'amour"), "Adoration", "other"))))))))))) %>% as.factor(.),
+     
+     
+     
+     author = ifelse(str_detect(paintings_validation$author,
+                                "David Teniers|David Tesniers|David T\x8eniers"), "David Teniers", 
+          ifelse(str_detect(paintings_validation$author,
+                            "Francois Boucher|Fran\x8dois Boucher|F. Boucher"), "Francois Boucher", 
+          ifelse(str_detect(paintings_validation$author,
+                            "Philippe Wouvermans|Philippe Wouwermans|d'apr\x8fs P. Wouvermans|Ph. Vouvermans|Philippe Wouermans|Philippe Wouwerman"), "Philippe Wouvermans",
+          ifelse(str_detect(paintings_validation$author,
+                            "Charles de la Fosse|Ch. De la Fosse| Charles de LaFosse|C. la Fosse"), "Charles de la Fosse",
+          ifelse(str_detect(paintings_validation$author,"French"), "French",
+          ifelse(str_detect(paintings_validation$author,"Gasparo Van Vitelle"), "Gasparo Van Vitelle",
+          ifelse(str_detect(paintings_validation$author,"Rosalba Carriera"), "Rosalba Carriera", 
+          ifelse(str_detect(paintings_validation$author,"Nicolas Poussin|N. Poussin"), "Nicolas Poussin",
+          ifelse(str_detect(paintings_validation$author,"Gaspard Netscher|G. Netscher"), "Gaspard Netscher",
+          ifelse(str_detect(paintings_validation$author,"Nicolas Berghem|N. Berghem"), "Nicolas Berghem", "other")))))))))) %>% as.factor(.),
+     
+     #authorlevel = as.factor(authorlevel),
+     #price= as.integer(logprice),
+     dealer = as.factor(dealer),
+     origin_author = as.factor(origin_author),
+     origin_cat = as.factor(origin_cat),
+     school_pntg = ifelse(school_pntg %in% c("A", "X"), "X", school_pntg) %>% as.factor(.),
+     authorstyle = ifelse(authorstyle %in% c("n/a", ""), 0, 1) %>% as.factor(),
+     #winningbiddertype = ifelse(winningbiddertype %in% c("n/a", "", "EB"), "X", winningbiddertype) %>% as.factor(),
+     endbuyer = ifelse(endbuyer %in% c("n/a", ""), "X", endbuyer) %>% as.factor(),
+     materialCat = ifelse(materialCat %in% c("n/a", ""), "other", materialCat) %>% as.factor(),
+     Shape = ifelse(Shape %in% c("round", "roude"), "round",
+                    ifelse(Shape %in% c("oval", "ovale"), "oval",
+                           ifelse(Shape == "squ_rect", "squ_rect", "other"))) %>% as.factor(),
+     artistliving = as.factor(artistliving),
+     diff_origin = as.factor(diff_origin),
+     engraved = as.factor(engraved),
+     original = as.factor(original),
+     prevcoll = as.factor(prevcoll),
+     othartist = as.factor(othartist),
+     paired = as.factor(paired),
+     figures = as.factor(figures),
+     lrgfont = as.factor(lrgfont),
+     relig = as.factor(relig),
+     landsALL = as.factor(landsALL),
+     arch = as.factor(arch),
+     mytho = as.factor(mytho),
+     peasant = as.factor(peasant),
+     othgenre = as.factor(othgenre),
+     singlefig = as.factor(singlefig),
+     portrait = as.factor(portrait),
+     still_life = as.factor(still_life),
+     discauth = as.factor(discauth),
+     history = as.factor(history),
+     allegory = as.factor(allegory),
+     pastorale = as.factor(pastorale),
+     finished = as.factor(finished)
+   ) %>%  
+   .[,c(8, 1:7, 9:39)]
+
+```
+
+## Package Imputation
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+micetest = mice::mice(paintings_valid_1, printFlag = FALSE)
+paintings_valid_2 = mice::complete(micetest) %>% 
+  mutate(Interm = as.factor(Interm))
+```
+
+
+
 ###############################################################
 ############## Modeling  ######################################
 ###############################################################
@@ -268,7 +372,6 @@ ols.2 = lm(logprice ~ Shape + school_pntg
            + year*subject, 
            data = ols.train)
 ```
-
 
 ## Modification
 ```{r}
@@ -386,4 +489,3 @@ predictions = as.data.frame(
 colnames(predictions) = "fit"
 save(predictions, file="predict-test.Rdata")
 ```
-
