@@ -390,6 +390,7 @@ ols.2 = lm(logprice ~ Shape + school_pntg
 
 summary(ols.2)
 plot(ols.2)
+
 PI = data.frame(exp(predict(ols.2, 
                  newdata=paintings_test_2, 
                  interval = "pred")))
