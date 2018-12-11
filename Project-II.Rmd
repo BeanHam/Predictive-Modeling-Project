@@ -132,6 +132,8 @@ paintings_train_2 = mice::complete(micetest) %>%
   mutate(Interm = as.factor(Interm))
 ```
 
+
+## Clean Test Data
 ```{r, echo=FALSE}
 paintings_test_1 = paintings_test %>% 
    dplyr::select(-sale,
@@ -385,7 +387,7 @@ ols.2 = lm(logprice ~ Shape + school_pntg
            + paired*lrgfont + paired*subject + paired*discauth + paired*author
            + finished*discauth
            + lrgfont*discauth
-           + prevcoll*dealer + prevcoll*school_pntg + prevcoll*Interm
+           + prevcoll*dealer + prevcoll*Interm
              ,data = paintings_train_2)
 
 summary(ols.2)
@@ -394,14 +396,30 @@ plot(ols.2)
 PI = data.frame(exp(predict(ols.2, 
                  newdata=paintings_test_2, 
                  interval = "pred")))
+```
 
+## Predict With Test Set
+```{r}
+predictions_test = as.data.frame(
+  exp(predict(ols.2, 
+              newdata=paintings_test_2, 
+              interval = "pred")))
 
-predictions = as.data.frame(
-  exp(predict(ols.2, newdata=paintings_test_2, type = "response")))
-colnames(predictions) = "fit"
-save(predictions, file="predict-test.Rdata")
+save(predictions_test, file="predict-test.Rdata")
 
 ```
+
+## Predict with Validation Set
+```{r}
+predictions_valid = as.data.frame(
+  exp(predict(ols.2, 
+              newdata=paintings_valid_2, 
+              interval = "pred")))
+
+save(predictions_valid, file="prediction-validation.Rdata")
+
+```
+
 
 ## 4.  Development of the final model
 
