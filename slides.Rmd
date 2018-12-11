@@ -13,6 +13,7 @@ library(ggplot2)
 library(stringr)
 ```
 
+
 ## EDA & Data Cleaning
 ```{r slide1}
 
@@ -21,8 +22,7 @@ library(stringr)
 - Recoded many categorical variables, for example:
 
 
-
-## Model Development
+## Model Result
 
 ```{r slide2, echo = TRUE}
 
