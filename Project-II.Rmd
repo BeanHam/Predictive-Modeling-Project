@@ -416,7 +416,7 @@ predictions_valid = as.data.frame(
               newdata=paintings_valid_2, 
               interval = "pred")))
 
-save(predictions_valid, file="prediction-validation.Rdata")
+save(predictions_valid, file="predict-validation.Rdata")
 
 ```
 
