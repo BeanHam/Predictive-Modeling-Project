@@ -422,14 +422,21 @@ Since we are still using the linear regression model, we used `predict` function
 
 ### Model evaluation: must include an evaluation discussion
 
-The final model that is specified has generally good performance and characteristics. There are three outliers in the residuals versus fitted values plot, though the plot otherwise appears to indicate that the model meets the homoskedasticity assumption,  
-- magnitude of coefficients and standard errors
-- avPlots - not very helpful because so many categorical/indicdator variables
+The final model that is specified has generally good performance and characteristics. There are three outliers in the residuals versus fitted values plot, though the plot otherwise appears to indicate that the model meets the homoskedasticity assumption. The residuals also appear to meet the normality assumption, based upon a visual inspection of the Normal Q-Q plot. Though there is some slight deviation in the tails, there does not appear to be any extreme variability or overall pattern to the residuals that would indicate an underlying distribution other than the normal. 
 
-There are three points with Cook's distance of 1 (points 423, 1129, 1351). It is unclear if they are influential at this time. 
+The scale-location plot does indicate three residuals that are right at the border of being large (standardized residuals greater than or near a value of 2.0). For case 751, this is likely due to its above-average surface area of 11,880 sq. in., but its relatively low price of 90 livres (compared to an average of approximately 130 livres in the training data). A similar argument may be made for case 473. For case 81, the opposite seems to be the problem. The painting is relatively small, with a surface area of just 84.4 sq. in., but sold for approximately 13,000 livres. In these few cases, there is likely some characteristic of the painting that is not being fully captured by the predictors, though this does not appear to have an overall great affect on the performance of the model. Of concern might be that if this model were used to value a painting with similar characteristics, we may undervalue it. 
+
+The residuals vs. leverage plot makes note of three cases that are potentially influential points: 423, 1129, 1351. They have a Cook's distance of one, indicating high leverage.
+
+- magnitude of coefficients and standard errors
+
+The model was further evaluated using added variable plots to understand each predictor's contribution to the model, and whether any transformations may be worth exploring. However, this process was not very helpful because the model includes so many categoricals variables, and so few numeric continuous variables. There was no indication from visual inspection of the avPlots that transformations of the numeric predictors would have yielded improved model fit. 
+
+
 
 ### Model testing : must include a discussion
 - metrics from test set
+- potential improvelemnts  - k-fold cross validation due to uncertainty in makeup of test set. different test/validation sets may yield different model results
 
 ### Model result: must include a selection and discussion of the top 10 valued  paintings in the validation data.
 
