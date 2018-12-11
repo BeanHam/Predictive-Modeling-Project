@@ -408,43 +408,6 @@ predictions = as.data.frame(
 save(predictions, file="predict-test.Rdata")
 ```
 
-
-## 4.  Development of the final model
-
-* Final model: must include a summary table
-
-* Variables: must include an explanation
-
-
-* Variable selection/shrinkage:
-
-a. Linear Model
-
-The linear model from part I does a fairly good job in predicting. Therefore, after adding two more variables in the dataset, we decided to refine the linear model first. The plan was to add new features and interactions into the model, hoping to potentially explain more variation in the response variable. Similar as the process in part I, we applied BMA (Bayesian Model Averaging) to select the base variables that have high posterior probabilities and include them in the initial model. Then we tested all possible interactions and used AIC to select interactions that are good for predicting. However, the output from AIC contain too many interactions, which might lead to the problem of overfitting. Additionally, it contains some interactions with coefficients as NA, and some that do not make sense at all. Therefore I manually removed them and kept twisting around the rest features, which led to the best final linear model in terms of the lowest RMSE.
-
-b. Tree Model
-
-Since we have many categorical variables, as in nature, a tree-based model would be appropriate in addressing the interactions to explain the response variable. We tested two tree models: random forest and boosting (bagging does not work in our case as we have 39 variables, which is beyond the limit of possible selection candidates at each node). As for random forest, we used $mtry = 13$ as this is a regression problem. For boosting, we used 5000 trees and tried different interaction depth (4, 6, 8, 10). Both methods do better job than the linear model from part I, but not as good as the linear model generated above. 
-
-c. Poisson&Negative Binomial Regression
-
-The nature of auction price is integer. Even though not strictly count data, but could be treated in such way so that we can use poisson&negative binomial regression. We trained the tested the poisson model first. With all the vairiables included (even with all the interactionss), the residual deviance is 100 times higher than the residual degrees of freedom. We concluded that the poisson model s not appropriate and proceeded with negative binomial model. The RMSE is not better than the linear model is part I (even with all the interactions) and there is still the problem of over-dispersion. 
-
-d. Xgboost
-
-
-Comparing all the models we fitted above, we conclude that the linear model has the best performance in terms of predicting (lowest rmse). The linear model was relatively more complex than the one in part I, resuting in some loss in predictability. However, it is still more interpretable than tree-based models. Therefore, we concluded that the best model is the linear model.
-
-
-* Residual: must include a residual plot and a discussion
-The residual plot looks fairly good. There seems to have a pattern that the variance is slightly higher with fitted value around 5 and a little lower at the two tails. But in general, the constant vairance assumption is satisfied. The normality assumption is well satisfied from normal qq-plot, with several observations slightly scattered away on the two sides. 
-
-
-* discussion of how prediction intervals obtained
-
-Since we are still using the linear regression model, we used `predict` function with `interval = "pred"` argument to obtain the prediction interval. 
-
-
 ## Negative Binomial
 ```{r}
 library(MASS)
@@ -497,4 +460,136 @@ colnames(predictions) = "fit"
 save(predictions, file="predict-test.Rdata")
 ```
 
-## Final Predictions/Validation
+
+__Write ups__
+
+## 1. Introduction
+
+In this study, the auction prices of paintings in 18th century Paris were examined. Specifically, we wish to understand the variables which affect the prices of the paintings, and then be able to predict auction prices based on characteristics of a certain painting. By fitting an appropriate model, we will also be creating a tool to help decide whether specific paintings that are either underpriced or overpriced given their realization of the covariates that were included in the model.
+
+One of the main challenges in building this model is to narrow down the number of covariates from the 59 candidates in the original data set to less than 20 in the final model. This must be done in such a way that an undue amount of bias is not introduced, and overfitting is avoided. Another challenge is to properly deal with the messiness of the data, including both missingness, covariates with a very large number of levels, multicollinearity in the data, and discrepancies in data entries (e.g. same category marked differently).
+
+The ability to explain the results and provide recommendations to individuals without statistical background is equally important and challenging, since the primary audience for this analysis is intended to be art historians. The goal was therefore to balance predictive performance, model simplicity, and interpretability in order to create a pricing model for artwork in 18th century France.
+
+## 2. Exploratory data analysis 
+   
+### A) Data summary & cleaning
+To begin, we looked at the summary of the original training data. There are few numeric variables and a lot of binary variables. Some variables, such as `Interm`, `Surface`, `Height_in` etc. have mising values, which needed to be imputed. The following steps were taken to clean the data: 
+
+a. The first step was to reduce the dimensionality of the problem by removing variables that were deemed not to be useful due to their being summarized more succinctly by another similar variable, having too many levels, or not containing any useful information (i.e. taking on the same value for each observation). These variables included: `lot`, `sale`, `price`, `count`, `subject`, `authorstandard`, `winningbidder`, and `other`. From the summary table, the `count` variable has all 1's; the `other` variable does not convey useful information; the other variables, such as `names` and `subjects`, are not useful in predicting the response variable (such as names). From the table of unique values we can see that some categorical variables have over 1,000 unique values. Therefore, we chose to remove them in the first step. The alternative to this would be to attempt to recode the variable in an effort to preserve some of its information for the model. In Part I, the `author` variable receive this treatment, but in the second iteration of this model, we chose to recode based on the perceived value of the names of several top artists.  Only the authors with more than 10 paintings are kept as a distinct level, and all others were coded as `other`. 
+
+b. By further screening the variables, we found out that `Surface` and `Surface_Rnd`, `Surface_Rect` are highly correlated, as they are all measurements based on the value of `Height_in`, `Width_in`, and `Diam_in`. We decided to use `Surface` in our initial model since it contained the most information about all of these measurements. The same issue happened to `material`, `mat`, and `materialCat`. `materialCat` recodes the other two more succinctly, therefore, we used `materialCat` for ease of modeling and interpretation. We applied the same strategy to keep `landsALL` and get rid of other variables related with landscape. 
+
+c. This data contained a great deal of structurally missing values (i.e. missingness resulting from how the researchers coded the data, rather than truly unavailable or omitted information). For those variables that have multiple levels, to be consistent with how the data was originally coded, we recoded the missing levels as "X", which stands for either "other" or "no information" in the code book, depending upon the variable in question. For `materialCat` and `Shape`, since there are so many levels, we grouped some levels with few (<10) observations together, coded as the "other" group. The remaining binary vairables were converted into factors.
+
+d. The remaining data issue was how to deal with missing values in the numeric continuous variable `Surface` and the binary variable `Interm`. The `mice` package (Multivariate Imputation by Chained Equations) was used to address this problem. It uses the observed values of other covariates in the dataset to create a model to impute the missing values. This method is superior to complete case analysis, which would result in losing an unacceptably large amount of data, as well as simpler imputation methods (i.e. imputing the mean of a given covariate to replace missing values).
+
+e. The variable `subject` also contained many levels, potentially with many observations representing the same realization but expressed differently (i.e. varied spelling and capitalization). Strings of the same meaning were detected by observation and recatogorized. From the resulting values, levels with more than 20 observations were kept while all others were coded as `other`.
+
+### B).Plots
+The relationship between the remaining features and the response `logprice` was then further examined . Using scatter plots, we can roughly determine which variables should be put into the initial model due to their, upon visual inspection, appearing to have a linear relationship with `logprice`. For categorical variables, we want to check if the `logprice` spans different ranges in different levels by plotting them using boxplots. For numeric variables, we want to check if there is a clear relationship between them and `logprice`.  
+
+For numeric variables, we see that `Surface` and `nfigures` seem to show a weak but positive relationship with `logprice`. Since there are several extremely large values in `position` (potentially outliers), it is hard to see that real pattern between the majority of points and `logprice`. These variables will be kept in the initial model, but may potentially be removed later in the development process.
+
+Since there are 33 categorical variables, we don't show the boxplots for all of them. But we have applied the same method to check all the categorical variables. The following variables show some differences in `logprice` at different levels (not yet considering the magnitude of the difference at this time): `subject`, `author`, `dealer`, `origin_author`, `origin_cat`, `school_pntg`, `diff_origin`, `authorstyle`, `endbuyer`, `Interm`, `Shape`, `materialCat`, `engraved`, `prevcoll`, `figures`, `finished`, `Irgfont`, `othgenre`, `discauth`, and `still_life`.
+
+If we were to choose best predictive variables for predicting, we would consider the magnitude of differences and the strength of relationships. The 10 variables we chose are: `Surface`, `subjetc`, `author`, `dealer`, `school_pntg`, `diff_origin`, `authorstyle`, `endbuyer`, `Interm`, `prevcoll`, `engraved`, `Irgfont`.
+
+For numeric variables, we note that `Surface` and `nfigures` appear to have a weak but positive relationship with `logprice`. Since there are several extremely large values in `position` (potential outliers), it is difficult to know if there is a truly useful relationship here between the majority of points and `logprice`.
+
+## 3. Discussion of preliminary model
+
+The overall characteristics of the model that we built in part I were: relatively low bias, reasonable coverage, and high RMSE compared to other teams. The methodology used to arrive at the first model included initial EDA, followed by BMA and stepwise selection with AIC and BIC in order to narrow the number of potential covariates to include in the model by seeking predictors with the highest posterior inclusion probabilitys (BMA) and highest information content (AIC/BIC). These method do not perform an exhausive search for all possible models, thus the true model and the best model for prediction might not have been captured. This is likely due to the fact that interaction terms were not included in the BMA step due to the computational intensity of such a calculation. Furthermore, a few important variables were likely excluded from the initial model out of hand (e.g. `author`, `subject`), and thus a good deal of important information was likely lost. These covariates were recoded and will be included in the model selection process during this second phase.
+
+Since there is inherently a tradeoff between  bias and RMSE in any modeling problem, it is reasonable that we were able to achieve relatively low bias, while RMSE was relatively higher. Both metrics may be improved with a better model, which may end up being something other than a linear model, or through deeper data cleaning. In the second phase, additional attention will be focused on tree/forest methods, as well as further development of the linear model to determine which provides superior prediction for the problem at hand.
+
+### Variables:
+
+a. The base variables we chose are: `Shape`, `school_pntg`, `dealer`, `Interm`, `paired`, `artistliving`, `diff_origin`, `endbuyer`, `finished`, `year`, `Surface`, `portrait`, `still_life`, `prevcoll`, `authorstyle`, `lrgfont`, `discauth`, `subject` and `author`.
+
+b. The interactions we used include: `dealer*Interm`, `dealer*paired`, `dealer*artistliving`, `dealer*diff_origin`, `artistliving*endbuyer`, `artistliving*finished`, `artistliving*year`, `diff_origin*Surface`, `diff_origin*portrait`, `diff_origin*still_life`, `diff_origin*prevcoll` `endbuyer*Surface`, `endbuyer*paired`, `endbuyer*year`, `authorstyle*portrait`, `Interm*lrgfont`, `paired*lrgfont`, `paired*subject`, `paired*discauth`, `paired*author`, `finished*discauth`, `lrgfont*discauth`, `prevcoll*dealer`, and `prevcoll*Interm`.
+
+c. Partial Explanations:
+
+* dealer: the type of dealer that the auction went through significantly affects the price of the painting. For example, compared with dealer J, the average price from dealer L is `179% higher`. (Same interpretation for dealer P and R, with different coefficients)
+
+* finished: if the painting is noted for being highly finished, the selling price on average is `69.76% higher` than when the painting is not noted for being highly finished.
+
+* prevcoll: when the previous owner is mentioned, the average selling price is `128.0% higher` than when the previous owner is not mentioned.
+
+* lrgfont: when the dealer devotes an additional paragraph, the average selling price is `124.9% higher` than when there is no additional paragraph.
+
+* authorstyle: when the author's name is introduced, the average selling price is expected to be `88.39% lower` than when the author's name is not introduced.
+
+* author: which author painted the painting also has some influence on the price. Compared with author Charles de la Fosse, author David Teniers' paintings are `80.57% higher` in price on average. Author Nicolas Berghem's paintings are `181.4% higher` in price on average. 
+
+* dealer&Interm interaction: when an intermediary is present, which the price of the auctioned paintings differs significantly among different dealers. For instance, if the dealer is R and an intermediary is used, the average selling price is `107.0% higher` than when the dealer is J with an intermediary.
+
+* finished*discauth: given that the painting is noted for being highly finished, when the dealer engages with authenticity, the average price is expected to be `76.2% higher`.
+
+* diff_origin:still_life: given that the origin of painting based on nationality of artist is different from the origin of painting based on dealer's classification, if the description indicates still life elements, the price is expected to be `-112.8% lower`.
+
+
+### Variable selection/shrinkage:
+
+a. Linear Model
+
+The linear model from part I does a fairly good job in predicting. Therefore, after adding two more variables in the dataset, we decided to refine the linear model first. The plan was to add new features and interactions into the model, hoping to potentially explain more variation in the response variable. Similar as the process in part I, we applied BMA (Bayesian Model Averaging) to select the base variables that have high posterior probabilities and include them in the initial model. Then we tested all possible interactions and used AIC to select interactions that are good for predicting. However, the output from AIC contain too many interactions, which might lead to the problem of overfitting. Additionally, it contains some interactions with coefficients as NA, and some that do not make sense at all. Therefore I manually removed them and kept twisting around the rest features, which led to the best final linear model in terms of the lowest RMSE.
+
+b. Tree Model
+
+Since we have many categorical variables, as in nature, a tree-based model would be appropriate in addressing the interactions to explain the response variable. We tested two tree models: random forest and boosting (bagging does not work in our case as we have 39 variables, which is beyond the limit of possible selection candidates at each node). As for random forest, we used $mtry = 13$ as this is a regression problem. For boosting, we used 5000 trees and tried different interaction depth (4, 6, 8, 10). Both methods do better job than the linear model from part I, but not as good as the linear model generated above. 
+
+c. Poisson&Negative Binomial Regression
+
+The nature of auction price is integer. Even though not strictly count data, but could be treated in such way so that we can use poisson&negative binomial regression. We trained the tested the poisson model first. With all the vairiables included (even with all the interactionss), the residual deviance is 100 times higher than the residual degrees of freedom. We concluded that the poisson model s not appropriate and proceeded with negative binomial model. The RMSE is not better than the linear model is part I (even with all the interactions) and there is still the problem of over-dispersion. 
+
+d. Xgboost
+
+Comparing all the models we fitted above, we conclude that the linear model has the best performance in terms of predicting (lowest rmse). The linear model was relatively more complex than the one in part I, resuting in some loss in predictability. However, it is still more interpretable than tree-based models. Therefore, we concluded that the best model is the linear model.
+
+### Residual: must include a residual plot and a discussion
+The residual plot looks fairly good. There seems to have a pattern that the variance is slightly higher with fitted value around 5 and a little lower at the two tails. But in general, the constant vairance assumption is satisfied. The normality assumption is well satisfied from normal qq-plot, with several observations slightly scattered away on the two sides. 
+
+
+## 5. Assessment of the final model
+
+### Model evaluation: must include an evaluation discussion
+
+The final model that is specified has generally good performance and characteristics. There are three outliers in the residuals versus fitted values plot, though the plot otherwise appears to indicate that the model meets the homoskedasticity assumption. The residuals also appear to meet the normality assumption, based upon a visual inspection of the Normal Q-Q plot. Though there is some slight deviation in the tails, there does not appear to be any extreme variability or overall pattern to the residuals that would indicate an underlying distribution other than the normal. 
+
+The scale-location plot does indicate three residuals that are right at the border of being large (standardized residuals greater than or near a value of 2.0). For case 751, this is likely due to its above-average surface area of 11,880 sq. in., but its relatively low price of 90 livres (compared to an average of approximately 130 livres in the training data). A similar argument may be made for case 473. For case 81, the opposite seems to be the problem. The painting is relatively small, with a surface area of just 84.4 sq. in., but sold for approximately 13,000 livres. In these few cases, there is likely some characteristic of the painting that is not being fully captured by the predictors, though this does not appear to have an overall great affect on the performance of the model. Of concern might be that if this model were used to value a painting with similar characteristics, we may undervalue it. 
+
+The residuals vs. leverage plot makes note of three cases that are potentially influential points: 423, 1129, 1351. They have a Cook's distance of one, indicating high leverage.
+
+- magnitude of coefficients and standard errors
+
+The model was further evaluated using added variable plots to understand each predictor's contribution to the model, and whether any transformations may be worth exploring. However, this process was not very helpful because the model includes so many categoricals variables, and so few numeric continuous variables. There was no indication from visual inspection of the avPlots that transformations of the numeric predictors would have yielded improved model fit. 
+
+
+### Model testing : must include a discussion
+- metrics from test set
+- potential improvelemnts  - k-fold cross validation due to uncertainty in makeup of test set. different test/validation sets may yield different model results
+
+After selecting the final model and predicting with the test dataset, we looked at a couple of metrics to evaluate the performance of the model. The two most important evaluations of the model are its rmse value, which represents the goodness of fit of the model, and its bias, which measures the tendency for the model to systematically over- or underestimate.
+
+In terms of the final model that we fit, we have the rmse value at 1210.42 and bias at 184.08. Since the method that we end up using is a linear model, whose ultimately purpose and model selection criteria is not to miniimize the rmse value, the rmse value that we end up with, although is not the best, is reasonaly good. Also, since we used stepwise AIC as the model selection criteria, it gives us a model that has better performance at predicting (comparing to BIC who leads to a model closer to the "true model"), the resulting model would have a higher rmse value than if we were to choose a different cirteria.
+
+Lastly, since we aim at balancing the simplicity, interpretability and performance of the model, as well as the tidyness of the , certain levels of categorical variables are merged and interactions were removed from the model, even though the stepwise function suggested to include them. This could also negatively affect the rmse and bias of the final selected model, but would also add up the difficulty of using and understanding the model, thus we chose to slightly sacrifise the precision.
+
+### Model Result
+According to our model, the most valuable ten paintings in the validation set are, from most expensive to the tenth expensive, marked with row number 2065, 2066, 2543, 1071, 2538, 2584, 2517, 2477, 2022 and 2528. All of these paintings tend to share similar characteristics like their shape, dealer, school, endbuyer, whether they are paired or not, whether they are engraved or not and etc. Most of these shared features and the level/status these 10 paintings are at, after taking into account the related interaction terms, lead to a positive correlation with the price. Therefore, the model ended up predicting high prices for these paintings.
+It is interesting that, the most expensive five paintings predicted all come from the same author Nicolaes Berchem Pieterszoon. This phenomenon further confirms the consistency of the final model in terms of predicting, because usually paintings from those artists who tend to have highly valued pieces of arts in auctions would all be pricy, and it is common for the same dealer and endbuyer to purchase paintings from the same artist, and the features of the artists' paintings are similar.
+
+## 6. Conclusion
+
+Even though we ended up using linear models for both part 1 and part 2, we do notice that all four metrics, in sample multiple R-squared, in sample adjested r squared, RMSE and coverage, have all improved from the preliminary model.
+
+The main improvements and adjustment we made to reach this result included deeper data cleaning, more careful detection and manipulation for outliers and influential points, as well as reasonable manual adjustment to predictor selection. Through the data exploration and cleaning, and modeling selection and testing process, we've learned a few new things through working with a real life data analysis example:
+- In real-life data analyses, we don't always get access to nicely formatted, clean data without any missingness. Therefore, when encountered such datasets, a deep and careful data cleaning process is important before moving on to further modeling and testing steps. In terms of properly treating missing data, simply deleting the observations with missing data might cause lost of valuable information, thus approriate data imputation is also important. Once modified to a cleaner, complete dataset, the later modeling results would turn out to be more precise, less computationally costly, with the maximum amount of available information for model training.
+- Ideally, we are able to find a model that is both the closest to the true model and has the best prediction performance. However, in real-life studies, this is not always the case. When deciding which variables to include in the final models, it is important to consider the questions of interest and determine if we want the true model or one with more precise predictions.
+- Based on our experience with this case, we learned that, even though advanced models like tree/forest methods, negative binomial, xgboost and etc., they aren't necessarily as efficient and well-performing as simple linear models.
+- Even though the auto selection methods have offered us with models selected based on certain metrics (e.g AIC, BIC), not all predictors and interactions should be included for interpretability and simplicity reasons, especially for a linear model. The ultimate purpose of the studies is not only to fit the best model, but also to draw conclusions and make inferences for a real-life scenario, and potentially serving other studies, whose researchers don't necessarily have statistical background.
+
+As far as the questions of interest of this particular study is concerned, we've learned that the auction price of a painting is not solely dependent on the artistic qualities of the painting itself. It also heavily depends on other factors involved in the auction process. For example, which types of endbuyers are intrigued by the painting, or which dealer the painting is auctioned from, can also significantly impact the final auction price.
+Even though most paintings with certain characteristics like large surface area end up with an auction price on the higher end, some paintings with exceptionally large area can be valued a lot less than expected, which ended up being an outlier. Therefore, it is crucial for historians to consider all features of a painting and decide how much each factor should be weighted when predicting the price.
