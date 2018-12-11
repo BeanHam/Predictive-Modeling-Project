@@ -1,0 +1,357 @@
+---
+title: "Project Part II"
+author: "Jonathan Klus"
+date: "12/10/2018"
+output: html_document
+---
+
+---
+title: "Project-II"
+output: pdf_document
+---
+
+```{r setup, include=FALSE, echo =FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+### Read in Training Data
+```{r message=FALSE, warning=FALSE, echo =FALSE}
+suppressWarnings(library(knitr)) 
+suppressWarnings(library(dplyr))
+suppressWarnings(library(ggplot2))
+suppressWarnings(library(GGally))
+suppressWarnings(library(mice))
+suppressWarnings(library(purrr))
+suppressWarnings(library(glmnet))
+suppressWarnings(library(MASS))
+suppressWarnings(library(BAS))
+suppressWarnings(library(tidyselect))
+suppressWarnings(library(stringr))
+```
+
+
+```{r read-data, echo=FALSE}
+set.seed(10)
+load("paintings_train.Rdata")
+load("paintings_test.Rdata")
+```
+
+
+## Manually Data Cleaning
+
+```{r, echo=FALSE}
+## Remove Intuitively Useless Variables
+ paintings_train_1 = paintings_train %>% 
+   dplyr::select(-sale,
+                 -count,
+                 -price,
+                 -authorstandard,
+                 -winningbidder,
+                 -other,
+                 -Height_in,
+                 -Width_in,
+                 -Surface_Rect,
+                 -Diam_in,
+                 -Surface_Rnd,
+                 -material,
+                 -mat,
+                 -lands_sc,
+                 -lands_elem,
+                 -lands_figs,
+                 -lands_ment,
+                 -lot,
+                 -winningbiddertype,
+                 -type_intermed) %>% 
+   mutate(
+     subject = ifelse(str_detect(paintings_train$subject,"Paysages|paysages|Paysage|paysage"), "Paysage",
+           ifelse(str_detect(paintings_train$subject,"Saint|Saints|saint|saints|Notre Seigneur|NS|Notre-Seigneur|N.S.|JC|J.C.|Jesus-Christ|Jesus Christ|Assomption|Vierge|vierge|Vierges|vierges|martyre|Martyre"), "Saint",
+           ifelse(str_detect(paintings_train$subject,"Portrait|Portraits|portrait|portraits"), "Portrait",
+           ifelse(str_detect(paintings_train$subject,"Marine|marine|Marines|marines"), "Marine",
+           ifelse(str_detect(paintings_train$subject,"Bustes|bustes|Buste|buste"), "Buste", 
+           ifelse(str_detect(paintings_train$subject,"Fruits|fruits|Fruit|fruit|Fleurs|flures|Fleur|fleur|feuille|Feuille|feuilles|Feuilles"), "Fruit$Flower", 
+           ifelse(str_detect(paintings_train$subject,"Sujets|sujets|Sujet|sujet"), "Sujet", 
+           ifelse(str_detect(paintings_train$subject,"Hommes|Homme|hommes|homme|L'Homme|Femmes|Femme|femmes|femme|Cavaliers|cavaliers|Cavalier|cavalier|Enfants|enfants|Enfant|enfant|L'Enfant|L'enfant|Mariage|mariage|Dame|Dames|dame|dames|Marchande|Marchand|marchand|marchande|Officier|Officiers|officier|officiers"), "People",
+           ifelse(str_detect(paintings_train$subject,"Arch|Architecture|Architectures|architecture|architectures|interieur|Interieur|L'interieur|L'Interieur"), "Arch", 
+           ifelse(str_detect(paintings_train$subject,"bataille|Bataille|batailles|Batailles|Combat"), "Battle",
+           ifelse(str_detect(paintings_train$subject,"Adoration|adoration|Adorations|adoration|L'Adoration|L'adoration|Amour|L'Amour|L'amour"), "Adoration", "other"))))))))))) %>% as.factor(.),
+    
+
+     author = ifelse(str_detect(paintings_train$author,
+                                "David Teniers|David Tesniers|David T\x8eniers"), "David Teniers", 
+          ifelse(str_detect(paintings_train$author,
+                            "Francois Boucher|Fran\x8dois Boucher|F. Boucher"), "Francois Boucher", 
+          ifelse(str_detect(paintings_train$author,
+                            "Philippe Wouvermans|Philippe Wouwermans|d'apr\x8fs P. Wouvermans|Ph. Vouvermans|Philippe Wouermans|Philippe Wouwerman"), "Philippe Wouvermans",
+          ifelse(str_detect(paintings_train$author,
+                            "Charles de la Fosse|Ch. De la Fosse| Charles de LaFosse|C. la Fosse"), "Charles de la Fosse",
+          ifelse(str_detect(paintings_train$author,"French"), "French",
+          ifelse(str_detect(paintings_train$author,"Gasparo Van Vitelle"), "Gasparo Van Vitelle",
+          ifelse(str_detect(paintings_train$author,"Rosalba Carriera"), "Rosalba Carriera", 
+          ifelse(str_detect(paintings_train$author,"Nicolas Poussin|N. Poussin"), "Nicolas Poussin",
+          ifelse(str_detect(paintings_train$author,"Gaspard Netscher|G. Netscher"), "Gaspard Netscher",
+          ifelse(str_detect(paintings_train$author,"Nicolas Berghem|N. Berghem"), "Nicolas Berghem", "other")))))))))) %>% as.factor(.),
+     
+     #authorlevel = as.factor(authorlevel),
+     #price = as.integer(price),
+     dealer = as.factor(dealer),
+     origin_author = as.factor(origin_author),
+     origin_cat = as.factor(origin_cat),
+     school_pntg = ifelse(school_pntg %in% c("A", "X"), "X", school_pntg) %>% as.factor(.),
+     authorstyle = ifelse(authorstyle %in% c("n/a", ""), 0, 1) %>% as.factor(),
+     #winningbiddertype = ifelse(winningbiddertype %in% c("n/a", ""), "X", winningbiddertype) %>% as.factor(),
+     endbuyer = ifelse(endbuyer %in% c("n/a", ""), "X", endbuyer) %>% as.factor(),
+     materialCat = ifelse(materialCat %in% c("n/a", ""), "other", materialCat) %>% as.factor(),
+     Shape = ifelse(Shape %in% c("round", "roude"), "round",
+                    ifelse(Shape %in% c("oval", "ovale"), "oval",
+                           ifelse(Shape == "squ_rect", "squ_rect", "other"))) %>% as.factor(),
+     artistliving = as.factor(artistliving),
+     diff_origin = as.factor(diff_origin),
+     engraved = as.factor(engraved),
+     original = as.factor(original),
+     prevcoll = as.factor(prevcoll),
+     othartist = as.factor(othartist),
+     paired = as.factor(paired),
+     figures = as.factor(figures),
+     lrgfont = as.factor(lrgfont),
+     relig = as.factor(relig),
+     landsALL = as.factor(landsALL),
+     arch = as.factor(arch),
+     mytho = as.factor(mytho),
+     peasant = as.factor(peasant),
+     othgenre = as.factor(othgenre),
+     singlefig = as.factor(singlefig),
+     portrait = as.factor(portrait),
+     still_life = as.factor(still_life),
+     discauth = as.factor(discauth),
+     history = as.factor(history),
+     allegory = as.factor(allegory),
+     pastorale = as.factor(pastorale),
+     finished = as.factor(finished)
+   ) %>%  
+   .[,c(8, 1:7, 9:39)]
+
+```
+
+## Package Imputation
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+micetest = mice::mice(paintings_train_1, printFlag = FALSE)
+paintings_train_2 = mice::complete(micetest) %>% 
+  mutate(Interm = as.factor(Interm))
+```
+
+```{r, echo=FALSE}
+paintings_test_1 = paintings_test %>% 
+   dplyr::select(-sale,
+                 -count,
+                 -price,
+                 -authorstandard,
+                 -winningbidder,
+                 -other,
+                 -Height_in,
+                 -Width_in,
+                 -Surface_Rect,
+                 -Diam_in,
+                 -Surface_Rnd,
+                 -material,
+                 -mat,
+                 -lands_sc,
+                 -lands_elem,
+                 -lands_figs,
+                 -lands_ment,
+                 -lot,
+                 -winningbiddertype,
+                 -type_intermed) %>% 
+   mutate(
+     subject = ifelse(str_detect(paintings_test$subject,"Paysages|paysages|Paysage|paysage"), "Paysage",
+           ifelse(str_detect(paintings_test$subject,"Saint|Saints|saint|saints|Notre Seigneur|NS|Notre-Seigneur|N.S.|JC|J.C.|Jesus-Christ|Jesus Christ|Assomption|Vierge|vierge|Vierges|vierges|martyre|Martyre"), "Saint",
+           ifelse(str_detect(paintings_test$subject,"Portrait|Portraits|portrait|portraits"), "Portrait",
+           ifelse(str_detect(paintings_test$subject,"Marine|marine|Marines|marines"), "Marine",
+           ifelse(str_detect(paintings_test$subject,"Bustes|bustes|Buste|buste"), "Buste", 
+           ifelse(str_detect(paintings_test$subject,"Fruits|fruits|Fruit|fruit|Fleurs|flures|Fleur|fleur|feuille|Feuille|feuilles|Feuilles"), "Fruit$Flower", 
+           ifelse(str_detect(paintings_test$subject,"Sujets|sujets|Sujet|sujet"), "Sujet", 
+           ifelse(str_detect(paintings_test$subject,"Hommes|Homme|hommes|homme|L'Homme|Femmes|Femme|femmes|femme|Cavaliers|cavaliers|Cavalier|cavalier|Enfants|enfants|Enfant|enfant|L'Enfant|L'enfant|Mariage|mariage|Dame|Dames|dame|dames|Marchande|Marchand|marchand|marchande|Officier|Officiers|officier|officiers"), "People",
+           ifelse(str_detect(paintings_test$subject,"Arch|Architecture|Architectures|architecture|architectures|interieur|Interieur|L'interieur|L'Interieur"), "Arch", 
+           ifelse(str_detect(paintings_test$subject,"bataille|Bataille|batailles|Batailles|Combat"), "Battle",
+           ifelse(str_detect(paintings_test$subject,"Adoration|adoration|Adorations|adoration|L'Adoration|L'adoration|Amour|L'Amour|L'amour"), "Adoration", "other"))))))))))) %>% as.factor(.),
+     
+     
+     
+     author = ifelse(str_detect(paintings_test$author,
+                                "David Teniers|David Tesniers|David T\x8eniers"), "David Teniers", 
+          ifelse(str_detect(paintings_test$author,
+                            "Francois Boucher|Fran\x8dois Boucher|F. Boucher"), "Francois Boucher", 
+          ifelse(str_detect(paintings_test$author,
+                            "Philippe Wouvermans|Philippe Wouwermans|d'apr\x8fs P. Wouvermans|Ph. Vouvermans|Philippe Wouermans|Philippe Wouwerman"), "Philippe Wouvermans",
+          ifelse(str_detect(paintings_test$author,
+                            "Charles de la Fosse|Ch. De la Fosse| Charles de LaFosse|C. la Fosse"), "Charles de la Fosse",
+          ifelse(str_detect(paintings_test$author,"French"), "French",
+          ifelse(str_detect(paintings_test$author,"Gasparo Van Vitelle"), "Gasparo Van Vitelle",
+          ifelse(str_detect(paintings_test$author,"Rosalba Carriera"), "Rosalba Carriera", 
+          ifelse(str_detect(paintings_test$author,"Nicolas Poussin|N. Poussin"), "Nicolas Poussin",
+          ifelse(str_detect(paintings_test$author,"Gaspard Netscher|G. Netscher"), "Gaspard Netscher",
+          ifelse(str_detect(paintings_test$author,"Nicolas Berghem|N. Berghem"), "Nicolas Berghem", "other")))))))))) %>% as.factor(.),
+     
+     #authorlevel = as.factor(authorlevel),
+     #price= as.integer(logprice),
+     dealer = as.factor(dealer),
+     origin_author = as.factor(origin_author),
+     origin_cat = as.factor(origin_cat),
+     school_pntg = as.factor(school_pntg),
+     authorstyle = ifelse(authorstyle %in% c("n/a", ""), 0, 1) %>% as.factor(),
+     #winningbiddertype = ifelse(winningbiddertype %in% c("n/a", "", "EB"), "X", winningbiddertype) %>% as.factor(),
+     endbuyer = ifelse(endbuyer %in% c("n/a", ""), "X", endbuyer) %>% as.factor(),
+     materialCat = ifelse(materialCat %in% c("n/a", ""), "other", materialCat) %>% as.factor(),
+     Shape = ifelse(Shape %in% c("round", "roude"), "round",
+                    ifelse(Shape %in% c("oval", "ovale"), "oval",
+                           ifelse(Shape == "squ_rect", "squ_rect", "other"))) %>% as.factor(),
+     artistliving = as.factor(artistliving),
+     diff_origin = as.factor(diff_origin),
+     engraved = as.factor(engraved),
+     original = as.factor(original),
+     prevcoll = as.factor(prevcoll),
+     othartist = as.factor(othartist),
+     paired = as.factor(paired),
+     figures = as.factor(figures),
+     lrgfont = as.factor(lrgfont),
+     relig = as.factor(relig),
+     landsALL = as.factor(landsALL),
+     arch = as.factor(arch),
+     mytho = as.factor(mytho),
+     peasant = as.factor(peasant),
+     othgenre = as.factor(othgenre),
+     singlefig = as.factor(singlefig),
+     portrait = as.factor(portrait),
+     still_life = as.factor(still_life),
+     discauth = as.factor(discauth),
+     history = as.factor(history),
+     allegory = as.factor(allegory),
+     pastorale = as.factor(pastorale),
+     finished = as.factor(finished)
+   ) %>%  
+   .[,c(8, 1:7, 9:39)]
+
+```
+
+## Package Imputation
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+micetest = mice::mice(paintings_test_1, printFlag = FALSE)
+paintings_test_2 = mice::complete(micetest) %>% 
+  mutate(Interm = as.factor(Interm))
+```
+
+###############################################################
+############## Modeling  ######################################
+###############################################################
+
+## linear model
+```{r, echo = FALSE, eval=FALSE}
+ols.train = paintings_train_2 #%>% dplyr::select(-price)
+ols.test = paintings_test_2 %>% dplyr::select(-logprice)
+
+ols = lm(logprice~(dealer + school_pntg + diff_origin + artistliving + endbuyer + authorstyle 
+                   + Interm + Shape + Surface + engraved + prevcoll + paired + finished 
+                   + lrgfont + portrait + discauth + still_life + year + author + subject)^2,
+         data = ols.train)
+AIC = step(ols, k = 2)
+
+options(max.print = 10000)
+summary(AIC)
+```
+
+## AIC output
+```{r, echo=FALSE, eval=FALSE}
+ols.2 = lm(logprice ~ Shape + school_pntg 
+           + dealer*diff_origin + dealer*artistliving + dealer*authorstyle + dealer*Surface + dealer*discauth + dealer*year + dealer*Interm 
+           + diff_origin*authorstyle + diff_origin*Interm + diff_origin*engraved + diff_origin*prevcoll + diff_origin*paired + diff_origin*lrgfont + diff_origin*subject 
+           + artistliving*authorstyle + artistliving*finished + artistliving*portrait + artistliving*year 
+           + endbuyer*Surface + endbuyer*paired + endbuyer*discauth + endbuyer*year
+           + authorstyle*prevcoll + authorstyle*finished + authorstyle*portrait
+           + Interm*paired + Interm*lrgfont + Interm*portrait + Interm*discauth
+           + Surface*paired + Surface*lrgfont + Surface*year + Surface*author + Surface*subject
+           + engraved* prevcoll + engraved*lrgfont + engraved*portrait
+           + prevcoll*finished
+           + paired*finished + paired*lrgfont + paired*discauth + paired*year + paired*author + paired*subject
+           + lrgfont*portrait + lrgfont*discauth
+           + discauth*year
+           + year*subject, 
+           data = ols.train)
+```
+
+## Modification
+```{r}
+ols.2 = lm(logprice ~ Shape + school_pntg
+           + dealer*Interm + dealer*paired + dealer*artistliving + dealer*diff_origin
+           + artistliving*endbuyer + artistliving*finished + artistliving*year
+           + diff_origin*Surface + diff_origin*portrait  + diff_origin*still_life + diff_origin*prevcoll
+           + endbuyer*Surface + endbuyer*paired + endbuyer*year
+           + authorstyle*portrait
+           + Interm*lrgfont
+           + paired*lrgfont + paired*subject + paired*discauth + paired*author
+           + finished*discauth
+           + lrgfont*discauth
+           + prevcoll*dealer + prevcoll*school_pntg + prevcoll*Interm
+             ,data = paintings_train_2)
+
+summary(ols.2)$r.squared
+
+predictions = as.data.frame(
+  exp(predict(ols.2, newdata=paintings_test_2, type = "response")))
+colnames(predictions) = "fit"
+save(predictions, file="predict-test.Rdata")
+
+```
+
+
+## Negative Binomial
+```{r}
+library(MASS)
+nb.train = paintings_train_2 %>% dplyr::select(-logprice)
+nb.test = paintings_test_2 %>% dplyr::select(-logprice, -price)
+
+nb = glm.nb(price ~., data = nb.train)
+
+predictions = as.data.frame(
+  exp(predict(nb, newdata=nb.test)))
+
+colnames(predictions) = "fit"
+save(predictions, file="predict-test.Rdata")
+```
+
+
+## RF
+```{r}
+library(randomForest)
+
+rf.train = paintings_train_2
+rf.test = paintings_test_2 %>% dplyr::select(-logprice)
+
+rf = randomForest(logprice ~ .,
+                  data = rf.train,
+                  importance = TRUE,
+                  mtry = round(sqrt(ncol(rf.train) -1), digits = 0))
+
+predictions = as.data.frame(
+  exp(predict(rf, 
+              newdata=rf.test)))
+colnames(predictions) = "fit"
+save(predictions, file="predict-test.Rdata")
+```
+
+## boosting
+```{r}
+library(gbm)
+boosting = gbm(logprice ~.,
+               data = paintings_train_2,
+               distribution = "gaussian",
+               n.trees = 5000,
+               interaction.depth = 6)
+
+#boost = xgboost::xgboost(data = paintings_train_2, logprice ~ .,)
+
+predictions = as.data.frame(
+  exp(predict(boosting, 
+              newdata=paintings_test_2,
+              n.trees = 5000,
+              type = "response")))
+colnames(predictions) = "fit"
+save(predictions, file="predict-test.Rdata")
