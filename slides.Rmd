@@ -316,6 +316,7 @@ barplot(coef_table[2:11,2], names.arg = coef_table[2:11,1], cex.names = 0.8, hor
 
 ```{r slide4}
 
+
 ```
 
 ## Interesting Finding
