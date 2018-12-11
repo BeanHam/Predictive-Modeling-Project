@@ -336,11 +336,11 @@ plot(ols.2)
 - This painting is an example of highly priced paintings:
 
 ## Artist
-![Nicolaes Berchem Pieterszoon](Pieterszon.png)
+![Nicolaes Berchem Pieterszoon](images/Pieterszon.png)
 
 ## Painting 1
-![Pieterszoon's Painting](expensive_predicted.png)
+![Pieterszoon's Painting](images/expensive_predicted.png)
 
 ## Painting 2
-![Pricey Painting](expensive_painting.png)
+![Pricey Painting](images/expensive_painting.png)
 
