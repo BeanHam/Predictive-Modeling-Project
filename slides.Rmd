@@ -1,6 +1,6 @@
 ---
 title: "STA 521 Final Project"
-author: "Bin Han, Jingyi Zhang, Jonathan Klus"
+author: "Team 10: Bin Han, Jingyi Zhang, Jonathan Klus"
 date: "12 December 2018"
 output:
   beamer_presentation: default
@@ -318,8 +318,11 @@ barplot(coef_table[2:11,2], names.arg = coef_table[2:11,1], cex.names = 0.8, hor
 
 ```
 
-## Pricey Artwork
+## Interesting Finding
+- The most expensive five paintings predicted from the validation set all come from the same artist: Nicolaes Pieterszoon Berchem;
+- Most of the more expensive paintings are auctioned from the deal with initial "R";
+- The endbuyer of these expensive paintings are, instead of a buyer or a dealer who may serve as an intermediary, collectors themselves;
+- Extremely large surface are doesn't mean high price;
+- This painting is an example of highly priced paintings:
 
-```{r slide5}
 
-```
