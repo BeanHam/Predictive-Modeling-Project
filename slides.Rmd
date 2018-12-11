@@ -147,10 +147,18 @@ coef_table = data.frame(names = rownames(ols.2.ci),
             filter(!(upper>0 & lower<0)) %>%
             arrange(desc(abs(coef)))
 
-barplot(coef_table[2:11,2], names.arg = coef_table[2:11,1], cex.names = 0.8, horiz = TRUE, las = 1)
+# barplot(coef_table[2:11,2], names.arg = coef_table[2:11,1], 
+#         cex.names = 0.8, cex.lab = 0.8,
+#         horiz = TRUE, las = 1)
 
 
-#ggplot2::ggplot(data = coef_table, mapping = ggplot2::aes(x = coef, label = names)) + ggplot2::geom_bar()
+ggplot2::ggplot(data = coef_table[2:10,], mapping = ggplot2::aes(x = names, y = coef)) + 
+  ggplot2::geom_bar(stat = "identity") +
+  coord_flip() +
+  xlab("value") +
+  ylab("covariate") + 
+  ggtitle("Important Covariates")
+
 
 
 
