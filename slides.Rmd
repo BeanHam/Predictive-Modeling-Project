@@ -9,27 +9,39 @@ output: ioslides_presentation
 knitr::opts_chunk$set(echo = FALSE)
 ```
 
-## EDA
+## EDA & Data Cleaning
+```{r slide1}
 
-- Bullet 1
-- Bullet 2
-- Bullet 3
+```
+- Removed variables:  `lot`, `sale`, `price`, `count`, `subject`, `authorstandard`, `winningbidder`, `Surface_Rnd`, `Surface_Rect`, `material`, `mat`
+- Recoded many categorical variables, for example:
+
+
 
 ## Model Development
 
-```{r cars, echo = TRUE}
-summary(cars)
-```
+```{r slide2, echo = TRUE}
 
-## Model Diagnostics
-
-```{r pressure}
-plot(pressure)
 ```
 
 ## Important Features
+```{r slide3}
+load("paintings_train.Rdata")
+
+```
+
+
+## Model Diagnostics
+
+```{r slide4}
+
+```
 
 ## Pricey Artwork
+
+```{r slide5}
+
+```
 
 ## Summary
 
