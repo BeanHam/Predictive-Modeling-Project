@@ -330,16 +330,23 @@ plot(ols.2)
 
 ## Interesting Finding
 - The most expensive five paintings predicted from the validation set all come from the same artist: Nicolaes Pieterszoon Berchem;
-- Most of the more expensive paintings are auctioned from the deal with initial "R";
+- Most of the more expensive paintings are auctioned from the dealer with initial "R";
 - The endbuyer of these expensive paintings are, instead of a buyer or a dealer who may serve as an intermediary, collectors themselves;
 - Extremely large surface are doesn't mean high price;
 - This painting is an example of highly priced paintings:
+
+1. https://upload.wikimedia.org/wikipedia/commons/e/e0/David_Teniers_the_Younger_-_The_Feast_of_the_Prodigal_Son.jpg)
+2. https://upload.wikimedia.org/wikipedia/commons/e/e8/Berchem%2C_Nicolaes_~_Landscape_with_Herdsmen_Gathering_Sticks%2C_early_1650s%2C_oil_on_panel%2C_private_collection%2C_New_York.jpg
 
 ## Artist
 ![Nicolaes Berchem Pieterszoon](Pieterszon.png)
 
 ## Painting 1
 ![Pieterszoon's Painting](expensive_predicted.png)
+
+Citation: 
+
+1. https://en.wikipedia.org/wiki/Nicolaes_Pieterszoon_Berchem#/media/File:Portrait_of_Nicolaes_Berchem_by_Jan_Stolker.jpg
 
 ## Painting 2
 ![Pricey Painting](expensive_painting.png)
