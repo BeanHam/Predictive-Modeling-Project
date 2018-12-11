@@ -326,4 +326,12 @@ barplot(coef_table[2:11,2], names.arg = coef_table[2:11,1], cex.names = 0.8, hor
 - Extremely large surface are doesn't mean high price;
 - This painting is an example of highly priced paintings:
 
+## Artist
+![Nicolaes Berchem Pieterszoon](Pieterszon.png)
+
+## Painting 1
+![Pieterszoon's Painting](expensive_predicted.png)
+
+## Painting 2
+![Pricey Painting](expensive_painting.png)
 
