@@ -385,7 +385,7 @@ ols.2 = lm(logprice ~ Shape + school_pntg
            + paired*lrgfont + paired*subject + paired*discauth + paired*author
            + finished*discauth
            + lrgfont*discauth
-           + prevcoll*dealer + prevcoll*school_pntg + prevcoll*Interm
+           + prevcoll*dealer + prevcoll*Interm
              ,data = paintings_train_2)
 
 summary(ols.2)
@@ -397,7 +397,10 @@ PI = data.frame(exp(predict(ols.2,
 
 
 predictions = as.data.frame(
-  exp(predict(ols.2, newdata=paintings_test_2, type = "response")))
+  exp(predict(ols.2, 
+              newdata=paintings_test_2, 
+              interval = "pred")))
+
 colnames(predictions) = "fit"
 save(predictions, file="predict-test.Rdata")
 
