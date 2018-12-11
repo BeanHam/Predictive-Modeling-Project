@@ -400,24 +400,12 @@ PI = data.frame(exp(predict(ols.2,
 
 ## Predict With Test Set
 ```{r}
-predictions_test = as.data.frame(
+predictions = as.data.frame(
   exp(predict(ols.2, 
               newdata=paintings_test_2, 
               interval = "pred")))
 
-save(predictions_test, file="predict-test.Rdata")
-
-```
-
-## Predict with Validation Set
-```{r}
-predictions_valid = as.data.frame(
-  exp(predict(ols.2, 
-              newdata=paintings_valid_2, 
-              interval = "pred")))
-
-save(predictions_valid, file="predictions.Rdata")
-
+save(predictions, file="predict-test.Rdata")
 ```
 
 
