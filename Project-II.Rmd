@@ -401,7 +401,6 @@ predictions = as.data.frame(
               newdata=paintings_test_2, 
               interval = "pred")))
 
-colnames(predictions) = "fit"
 save(predictions, file="predict-test.Rdata")
 
 ```
