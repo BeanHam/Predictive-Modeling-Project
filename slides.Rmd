@@ -9,22 +9,16 @@ output: ioslides_presentation
 knitr::opts_chunk$set(echo = FALSE)
 ```
 
-## EDA
 
-- Bullet 1
-- Bullet 2
-- Bullet 3
 
-## Model Development
+## Model Result
 
-```{r cars, echo = TRUE}
-summary(cars)
-```
+
 
 ## Model Diagnostics
 
 ```{r pressure}
-plot(pressure)
+plot(ols.2)
 ```
 
 ## Important Features

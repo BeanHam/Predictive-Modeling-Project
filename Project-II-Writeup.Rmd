@@ -11,7 +11,6 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-### Read in Training Data
 ```{r message=FALSE, warning=FALSE, echo =FALSE}
 suppressWarnings(library(knitr)) 
 suppressWarnings(library(dplyr))
@@ -31,10 +30,8 @@ suppressWarnings(library(stringr))
 set.seed(10)
 load("paintings_train.Rdata")
 load("paintings_test.Rdata")
+load("paintings_validation.Rdata")
 ```
-
-
-## Data Cleaning
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 ## Remove Intuitively Useless Variables
@@ -129,7 +126,6 @@ load("paintings_test.Rdata")
 
 ```
 
-## Package Imputation
 ```{r message=FALSE, warning=FALSE, echo=FALSE}
 micetest = mice::mice(paintings_train_1, printFlag = FALSE)
 paintings_train_2 = mice::complete(micetest) %>% 
@@ -229,10 +225,108 @@ paintings_test_1 = paintings_test %>%
 
 ```
 
-## Package Imputation
 ```{r message=FALSE, warning=FALSE, echo=FALSE}
 micetest = mice::mice(paintings_test_1, printFlag = FALSE)
 paintings_test_2 = mice::complete(micetest) %>% 
+  mutate(Interm = as.factor(Interm))
+```
+
+```{r, echo=FALSE}
+paintings_valid_1 = paintings_validation %>% 
+   dplyr::select(-sale,
+                 -count,
+                 -price,
+                 -authorstandard,
+                 -winningbidder,
+                 -other,
+                 -Height_in,
+                 -Width_in,
+                 -Surface_Rect,
+                 -Diam_in,
+                 -Surface_Rnd,
+                 -material,
+                 -mat,
+                 -lands_sc,
+                 -lands_elem,
+                 -lands_figs,
+                 -lands_ment,
+                 -lot,
+                 -winningbiddertype,
+                 -type_intermed) %>% 
+   mutate(
+     subject = ifelse(str_detect(paintings_validation$subject,"Paysages|paysages|Paysage|paysage"), "Paysage",
+           ifelse(str_detect(paintings_validation$subject,"Saint|Saints|saint|saints|Notre Seigneur|NS|Notre-Seigneur|N.S.|JC|J.C.|Jesus-Christ|Jesus Christ|Assomption|Vierge|vierge|Vierges|vierges|martyre|Martyre"), "Saint",
+           ifelse(str_detect(paintings_validation$subject,"Portrait|Portraits|portrait|portraits"), "Portrait",
+           ifelse(str_detect(paintings_validation$subject,"Marine|marine|Marines|marines"), "Marine",
+           ifelse(str_detect(paintings_validation$subject,"Bustes|bustes|Buste|buste"), "Buste", 
+           ifelse(str_detect(paintings_validation$subject,"Fruits|fruits|Fruit|fruit|Fleurs|flures|Fleur|fleur|feuille|Feuille|feuilles|Feuilles"), "Fruit$Flower", 
+           ifelse(str_detect(paintings_validation$subject,"Sujets|sujets|Sujet|sujet"), "Sujet", 
+           ifelse(str_detect(paintings_validation$subject,"Hommes|Homme|hommes|homme|L'Homme|Femmes|Femme|femmes|femme|Cavaliers|cavaliers|Cavalier|cavalier|Enfants|enfants|Enfant|enfant|L'Enfant|L'enfant|Mariage|mariage|Dame|Dames|dame|dames|Marchande|Marchand|marchand|marchande|Officier|Officiers|officier|officiers"), "People",
+           ifelse(str_detect(paintings_validation$subject,"Arch|Architecture|Architectures|architecture|architectures|interieur|Interieur|L'interieur|L'Interieur"), "Arch", 
+           ifelse(str_detect(paintings_validation$subject,"bataille|Bataille|batailles|Batailles|Combat"), "Battle",
+           ifelse(str_detect(paintings_validation$subject,"Adoration|adoration|Adorations|adoration|L'Adoration|L'adoration|Amour|L'Amour|L'amour"), "Adoration", "other"))))))))))) %>% as.factor(.),
+     
+     
+     
+     author = ifelse(str_detect(paintings_validation$author,
+                                "David Teniers|David Tesniers|David T\x8eniers"), "David Teniers", 
+          ifelse(str_detect(paintings_validation$author,
+                            "Francois Boucher|Fran\x8dois Boucher|F. Boucher"), "Francois Boucher", 
+          ifelse(str_detect(paintings_validation$author,
+                            "Philippe Wouvermans|Philippe Wouwermans|d'apr\x8fs P. Wouvermans|Ph. Vouvermans|Philippe Wouermans|Philippe Wouwerman"), "Philippe Wouvermans",
+          ifelse(str_detect(paintings_validation$author,
+                            "Charles de la Fosse|Ch. De la Fosse| Charles de LaFosse|C. la Fosse"), "Charles de la Fosse",
+          ifelse(str_detect(paintings_validation$author,"French"), "French",
+          ifelse(str_detect(paintings_validation$author,"Gasparo Van Vitelle"), "Gasparo Van Vitelle",
+          ifelse(str_detect(paintings_validation$author,"Rosalba Carriera"), "Rosalba Carriera", 
+          ifelse(str_detect(paintings_validation$author,"Nicolas Poussin|N. Poussin"), "Nicolas Poussin",
+          ifelse(str_detect(paintings_validation$author,"Gaspard Netscher|G. Netscher"), "Gaspard Netscher",
+          ifelse(str_detect(paintings_validation$author,"Nicolas Berghem|N. Berghem"), "Nicolas Berghem", "other")))))))))) %>% as.factor(.),
+     
+     #authorlevel = as.factor(authorlevel),
+     #price= as.integer(logprice),
+     dealer = as.factor(dealer),
+     origin_author = as.factor(origin_author),
+     origin_cat = as.factor(origin_cat),
+     school_pntg = ifelse(school_pntg %in% c("A", "X"), "X", school_pntg) %>% as.factor(.),
+     authorstyle = ifelse(authorstyle %in% c("n/a", ""), 0, 1) %>% as.factor(),
+     #winningbiddertype = ifelse(winningbiddertype %in% c("n/a", "", "EB"), "X", winningbiddertype) %>% as.factor(),
+     endbuyer = ifelse(endbuyer %in% c("n/a", ""), "X", endbuyer) %>% as.factor(),
+     materialCat = ifelse(materialCat %in% c("n/a", ""), "other", materialCat) %>% as.factor(),
+     Shape = ifelse(Shape %in% c("round", "roude"), "round",
+                    ifelse(Shape %in% c("oval", "ovale"), "oval",
+                           ifelse(Shape == "squ_rect", "squ_rect", "other"))) %>% as.factor(),
+     artistliving = as.factor(artistliving),
+     diff_origin = as.factor(diff_origin),
+     engraved = as.factor(engraved),
+     original = as.factor(original),
+     prevcoll = as.factor(prevcoll),
+     othartist = as.factor(othartist),
+     paired = as.factor(paired),
+     figures = as.factor(figures),
+     lrgfont = as.factor(lrgfont),
+     relig = as.factor(relig),
+     landsALL = as.factor(landsALL),
+     arch = as.factor(arch),
+     mytho = as.factor(mytho),
+     peasant = as.factor(peasant),
+     othgenre = as.factor(othgenre),
+     singlefig = as.factor(singlefig),
+     portrait = as.factor(portrait),
+     still_life = as.factor(still_life),
+     discauth = as.factor(discauth),
+     history = as.factor(history),
+     allegory = as.factor(allegory),
+     pastorale = as.factor(pastorale),
+     finished = as.factor(finished)
+   ) %>%  
+   .[,c(8, 1:7, 9:39)]
+
+```
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+micetest = mice::mice(paintings_valid_1, printFlag = FALSE)
+paintings_valid_2 = mice::complete(micetest) %>% 
   mutate(Interm = as.factor(Interm))
 ```
 
@@ -246,7 +340,7 @@ The ability to explain the results and provide recommendations to individuals wi
 
 ## 2. Exploratory data analysis 
    
-## A) Data summary & cleaning
+### A) Data summary & cleaning
 To begin, we looked at the summary of the original training data. There are few numeric variables and a lot of binary variables. Some variables, such as `Interm`, `Surface`, `Height_in` etc. have mising values, which needed to be imputed. The following steps were taken to clean the data: 
 
 a. The first step was to reduce the dimensionality of the problem by removing variables that were deemed not to be useful due to their being summarized more succinctly by another similar variable, having too many levels, or not containing any useful information (i.e. taking on the same value for each observation). These variables included: `lot`, `sale`, `price`, `count`, `subject`, `authorstandard`, `winningbidder`, and `other`. From the summary table, the `count` variable has all 1's; the `other` variable does not convey useful information; the other variables, such as `names` and `subjects`, are not useful in predicting the response variable (such as names). From the table of unique values we can see that some categorical variables have over 1,000 unique values. Therefore, we chose to remove them in the first step. The alternative to this would be to attempt to recode the variable in an effort to preserve some of its information for the model. In Part I, the `author` variable receive this treatment, but in the second iteration of this model, we chose to recode based on the perceived value of the names of several top artists.  Only the authors with more than 10 paintings are kept as a distinct level, and all others were coded as `other`. 
@@ -260,19 +354,23 @@ d. The remaining data issue was how to deal with missing values in the numeric c
 e. The variable `subject` also contained many levels, potentially with many observations representing the same realization but expressed differently (i.e. varied spelling and capitalization). Strings of the same meaning were detected by observation and recatogorized. From the resulting values, levels with more than 20 observations were kept while all others were coded as `other`.
 
 
-```{r}
-kable(paintings_train_2 %>% 
+```{r, echo = FALSE}
+author = paintings_train_2 %>% 
   group_by(author) %>% 
   summarise(sum = n()) %>% 
-  arrange(desc(sum)), align = "c")
+  arrange(desc(sum))
 
-kable(paintings_train_2 %>% 
+kable(author)
+
+subject = paintings_train_2 %>% 
   group_by(subject) %>% 
   summarise(sum = n()) %>% 
-  arrange(desc(sum)), align = "c")
+  arrange(desc(sum))
+
+kable(subject)
 ```
 
-## B). Plots
+### B). Plots
 ```{r parse_df, message=FALSE, warning=FALSE, echo=FALSE}
 graph_numeric = paintings_train_2 %>% 
   dplyr::select(position,
@@ -287,11 +385,12 @@ graph_categorical = paintings_train_2 %>%
          -nfigures,
          -logprice)
 ```
+
 The relationship between the remaining features and the response `logprice` was then further examined . Using scatter plots, we can roughly determine which variables should be put into the initial model due to their, upon visual inspection, appearing to have a linear relationship with `logprice`. For categorical variables, we want to check if the `logprice` spans different ranges in different levels by plotting them using boxplots. For numeric variables, we want to check if there is a clear relationship between them and `logprice`.  
 
 For numeric variables, we see that `Surface` and `nfigures` seem to show a weak but positive relationship with `logprice`. Since there are several extremely large values in `position` (potentially outliers), it is hard to see that real pattern between the majority of points and `logprice`. These variables will be kept in the initial model, but may potentially be removed later in the development process.
 
-```{r num_eda}
+```{r num_eda, include = FALSE}
 ## numeric
 par(mfrow = c(2, 2))
 for (i in 1:ncol(graph_numeric)){
@@ -305,7 +404,7 @@ for (i in 1:ncol(graph_numeric)){
 
 Since there are 33 categorical variables, we don't show the boxplots for all of them. But we have applied the same method to check all the categorical variables. The following variables show some differences in `logprice` at different levels (not yet considering the magnitude of the difference at this time): `subject`, `author`, `dealer`, `origin_author`, `origin_cat`, `school_pntg`, `diff_origin`, `authorstyle`, `endbuyer`, `Interm`, `Shape`, `materialCat`, `engraved`, `prevcoll`, `figures`, `finished`, `Irgfont`, `othgenre`, `discauth`, and `still_life`.
 
-```{r cat_eda}
+```{r cat_eda, include=FALSE}
 ## categorical
 par(mfrow = c(2,3))
 for (i in 1:12){
@@ -321,8 +420,7 @@ If we were to choose best predictive variables for predicting, we would consider
 For numeric variables, we note that `Surface` and `nfigures` appear to have a weak but positive relationship with `logprice`. Since there are several extremely large values in `position` (potential outliers), it is difficult to know if there is a truly useful relationship here between the majority of points and `logprice`. 
 
 
-
-##3. Discussion of preliminary model
+## 3. Discussion of preliminary model
 
 The overall characteristics of the model that we built in part I were: relatively low bias, reasonable coverage, and high RMSE compared to other teams. The methodology used to arrive at the first model included initial EDA, followed by BMA and stepwise selection with AIC and BIC in order to narrow the number of potential covariates to include in the model by seeking predictors with the highest posterior inclusion probabilitys (BMA) and highest information content (AIC/BIC). These method do not perform an exhausive search for all possible models, thus the true model and the best model for prediction might not have been captured. This is likely due to the fact that interaction terms were not included in the BMA step due to the computational intensity of such a calculation. Furthermore, a few important variables were likely excluded from the initial model out of hand (e.g. `author`, `subject`), and thus a good deal of important information was likely lost. These covariates were recoded and will be included in the model selection process during this second phase.
 
@@ -330,7 +428,6 @@ Since there is inherently a tradeoff between  bias and RMSE in any modeling prob
 
 
 ## 4.  Development of the final model
-### Final model
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 ols.2 = lm(logprice ~ Shape + school_pntg +
            dealer*Interm + dealer*paired + dealer*artistliving + dealer*diff_origin +
@@ -399,23 +496,23 @@ d. Xgboost
 
 Comparing all the models we fitted above, we conclude that the linear model has the best performance in terms of predicting (lowest rmse). The linear model was relatively more complex than the one in part I, resuting in some loss in predictability. However, it is still more interpretable than tree-based models. Therefore, we concluded that the best model is the linear model.
 
-```{r}
-plot(ols.2)
-```
-
 ### Residual: must include a residual plot and a discussion
 The residual plot looks fairly good. There seems to have a pattern that the variance is slightly higher with fitted value around 5 and a little lower at the two tails. But in general, the constant vairance assumption is satisfied. The normality assumption is well satisfied from normal qq-plot, with several observations slightly scattered away on the two sides. 
 
+```{r, echo = FALSE, warning=FALSE, message=FALSE}
+par(mfrow = c(2,2))
+plot(ols.2)
+```
 
 ### discussion of how prediction intervals obtained
-```{r}
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
 PI = data.frame(exp(predict(ols.2, 
-                 newdata=paintings_test_2, 
+                 newdata=paintings_test_2[1:20, ], 
                  interval = "pred")))
 kable(PI, digits = 3, align = "c", caption = "Prediction Interval")
 ```
 
-Since we are still using the linear regression model, we used `predict` function with `interval = "pred"` argument to obtain the prediction interval. 
+Since we are still using the linear regression model, we used `predict` function with `interval = "pred"` argument to obtain the prediction interval. In the table above, we just showed the prediction interval for the first 20 observations.
 
 ## 5. Assessment of the final model
 
@@ -445,14 +542,14 @@ Lastly, since we aim at balancing the simplicity, interpretability and performan
 
 ### Model result: must include a selection and discussion of the top 10 valued  paintings in the validation data.
 
-```{r message=FALSE, warning=FALSE}
+```{r message=FALSE, warning=FALSE, echo = FALSE}
 valid_pred = predictions = as.data.frame(
   exp(predict(ols.2, newdata=paintings_valid_2, type = "response")))
+
 colnames(valid_pred) = c("prediction")
 top_10 = data.frame(price = valid_pred$prediction, rownum = rownames(paintings_validation))
-top_10 %>% arrange(desc(price)) %>% slice(1:10)
 
-paintings_validation[c("2065", "2066", "2543", "1071", "2538", "2584", "2517", "2477", "2022", "2528"),]
+kable(top_10 %>% arrange(desc(price)) %>% slice(1:10), digits = 1, align = "c")
 ```
 
 According to our model, the most valuable ten paintings in the validation set are, from most expensive to the tenth expensive, marked with row number 2065, 2066, 2543, 1071, 2538, 2584, 2517, 2477, 2022 and 2528. All of these paintings tend to share similar characteristics like their shape, dealer, school, endbuyer, whether they are paired or not, whether they are engraved or not and etc. Most of these shared features and the level/status these 10 paintings are at, after taking into account the related interaction terms, lead to a positive correlation with the price. Therefore, the model ended up predicting high prices for these paintings.
