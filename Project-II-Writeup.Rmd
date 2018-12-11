@@ -417,8 +417,7 @@ kable(PI, digits = 3, align = "c", caption = "Prediction Interval")
 
 Since we are still using the linear regression model, we used `predict` function with `interval = "pred"` argument to obtain the prediction interval. 
 
-## 5. Assessment of the final model (25 points)
-
+## 5. Assessment of the final model
 
 ### Model evaluation: must include an evaluation discussion
 
@@ -433,11 +432,31 @@ The residuals vs. leverage plot makes note of three cases that are potentially i
 The model was further evaluated using added variable plots to understand each predictor's contribution to the model, and whether any transformations may be worth exploring. However, this process was not very helpful because the model includes so many categoricals variables, and so few numeric continuous variables. There was no indication from visual inspection of the avPlots that transformations of the numeric predictors would have yielded improved model fit. 
 
 
-
 ### Model testing : must include a discussion
 - metrics from test set
 - potential improvelemnts  - k-fold cross validation due to uncertainty in makeup of test set. different test/validation sets may yield different model results
 
+After selecting the final model and predicting with the test dataset, we looked at a couple of metrics to evaluate the performance of the model. The two most important evaluations of the model are its rmse value, which represents the goodness of fit of the model, and its bias, which measures the tendency for the model to systematically over- or underestimate.
+
+In terms of the final model that we fit, we have the rmse value at 1210.42 and bias at 184.08. Since the method that we end up using is a linear model, whose ultimately purpose and model selection criteria is not to miniimize the rmse value, the rmse value that we end up with, although is not the best, is reasonaly good. Also, since we used stepwise AIC as the model selection criteria, it gives us a model that has better performance at predicting (comparing to BIC who leads to a model closer to the "true model"), the resulting model would have a higher rmse value than if we were to choose a different cirteria.
+
+Lastly, since we aim at balancing the simplicity, interpretability and performance of the model, as well as the tidyness of the , certain levels of categorical variables are merged and interactions were removed from the model, even though the stepwise function suggested to include them. This could also negatively affect the rmse and bias of the final selected model, but would also add up the difficulty of using and understanding the model, thus we chose to slightly sacrifise the precision.
+
+
 ### Model result: must include a selection and discussion of the top 10 valued  paintings in the validation data.
+
+```{r message=FALSE, warning=FALSE}
+valid_pred = predictions = as.data.frame(
+  exp(predict(ols.2, newdata=paintings_valid_2, type = "response")))
+colnames(valid_pred) = c("prediction")
+top_10 = data.frame(price = valid_pred$prediction, rownum = rownames(paintings_validation))
+top_10 %>% arrange(desc(price)) %>% slice(1:10)
+
+paintings_validation[c("2065", "2066", "2543", "1071", "2538", "2584", "2517", "2477", "2022", "2528"),]
+```
+
+According to our model, the most valuable ten paintings in the validation set are, from most expensive to the tenth expensive, marked with row number 2065, 2066, 2543, 1071, 2538, 2584, 2517, 2477, 2022 and 2528. All of these paintings tend to share similar characteristics like their shape, dealer, school, endbuyer, whether they are paired or not, whether they are engraved or not and etc. Most of these shared features and the level/status these 10 paintings are at, after taking into account the related interaction terms, lead to a positive correlation with the price. Therefore, the model ended up predicting high prices for these paintings.
+It is interesting that, the most expensive five paintings predicted all come from the same author Nicolaes Berchem Pieterszoon. This phenomenon further confirms the consistency of the final model in terms of predicting, because usually paintings from those artists who tend to have highly valued pieces of arts in auctions would all be pricy, and it is common for the same dealer and endbuyer to purchase paintings from the same artist, and the features of the artists' paintings are similar.
+
 
 ## 6. Conclusion (10 points): must include a summary of results and a discussion of things learned. Optional what would you do if you had more time.
