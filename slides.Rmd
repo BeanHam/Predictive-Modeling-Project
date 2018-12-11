@@ -10,20 +10,38 @@ knitr::opts_chunk$set(echo = FALSE)
 ```
 
 
+## EDA & Data Cleaning
+```{r slide1}
+
+```
+- Removed variables:  `lot`, `sale`, `price`, `count`, `subject`, `authorstandard`, `winningbidder`, `Surface_Rnd`, `Surface_Rect`, `material`, `mat`
+- Recoded many categorical variables, for example:
+
 
 ## Model Result
 
+```{r slide2, echo = TRUE}
+
+```
+
+## Important Features
+```{r slide3}
+load("paintings_train.Rdata")
+
+```
 
 
 ## Model Diagnostics
 
-```{r pressure}
-plot(ols.2)
+```{r slide4}
+
 ```
 
-## Important Features
-
 ## Pricey Artwork
+
+```{r slide5}
+
+```
 
 ## Summary
 
