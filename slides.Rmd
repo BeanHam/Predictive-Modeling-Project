@@ -322,8 +322,9 @@ ggplot2::ggplot(data = coef_table[2:10,], mapping = ggplot2::aes(x = names, y = 
 
 ## Model Diagnostics
 
-```{r slide4}
-
+```{r slide4, warning=FALSE, message=FALSE}
+par(mfrow = c(2,2))
+plot(ols.2)
 
 ```
 
