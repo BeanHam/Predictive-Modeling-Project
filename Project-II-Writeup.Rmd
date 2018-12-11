@@ -324,9 +324,9 @@ For numeric variables, we note that `Surface` and `nfigures` appear to have a we
 
 ##3. Discussion of preliminary model
 
-The overall characteristics of the model that we built in part I were: relatively lower bias, reasonable coverage, and high RMSE compared to other teams. The methodology used to arrive at the first model included EDA analyses, BAS, stepwise selection with AIC and BIC, which doesn't do an exhausive search for all possible models, thus the true model and the best model for prediction might not have been captured.
+The overall characteristics of the model that we built in part I were: relatively low bias, reasonable coverage, and high RMSE compared to other teams. The methodology used to arrive at the first model included initial EDA, followed by BMA and stepwise selection with AIC and BIC in order to narrow the number of potential covariates to include in the model by seeking predictors with the highest posterior inclusion probabilitys (BMA) and highest information content (AIC/BIC). These method do not perform an exhausive search for all possible models, thus the true model and the best model for prediction might not have been captured. This is likely due to the fact that interaction terms were not included in the BMA step due to the computational intensity of such a calculation. Furthermore, a few important variables were likely excluded from the initial model out of hand (e.g. `author`, `subject`), and thus a good deal of important information was likely lost. These covariates were recoded and will be included in the model selection process during this second phase.
 
-Since there's inherently a trade off between  bias and rmse, it is reasonale that we were able to get a bias value on the lower side while rmse unfortunately was on the higher end. There is room for both values, however, to be improved with a better model, potentially a model other than a linear one, or through deeper data cleaning. Next, besides more data cleaning and re-coding, we will be focusing on models like tree/forest methods, as well as more development on linear models.
+Since there is inherently a tradeoff between  bias and RMSE in any modeling problem, it is reasonable that we were able to achieve relatively low bias, while RMSE was relatively higher. Both metrics may be improved with a better model, which may end up being something other than a linear model, or through deeper data cleaning. In the second phase, additional attention will be focused on tree/forest methods, as well as further development of the linear model to determine which provides superior prediction for the problem at hand.
 
 
 ## 4.  Development of the final model
@@ -346,17 +346,20 @@ ols.2 = lm(logprice ~ Shape + school_pntg +
            data = paintings_train_2)
 ```
 
-```{r}
-summary(ols.2)
+### Summary of Covariates Included and their Coefficients
+```{r, echo=FALSE}
+table_of_coef = cbind(coef(ols.2), confint(ols.2))
+colnames(table_of_coef) = c("Coefficient", "2.5%", "97.5%")
+kable(table_of_coef, digits = 3, align = "c")
 ```
 
-### Variables: must include an explanation
+### Variables:
 
 a. The base variables we chose are: `Shape`, `school_pntg`, `dealer`, `Interm`, `paired`, `artistliving`, `diff_origin`, `endbuyer`, `finished`, `year`, `Surface`, `portrait`, `still_life`, `prevcoll`, `authorstyle`, `lrgfont`, `discauth`, `subject` and `author`.
 
-b. The interactions we used include: `dealer*Interm`, `dealer*paired`, `dealer*artistliving`, `dealer*diff_origin`, `artistliving*endbuyer`, `artistliving*finished`, `artistliving*year`, `diff_origin*Surface`, `diff_origin*portrait`, `diff_origin*still_life`, `diff_origin*prevcoll` `endbuyer*Surface`, `endbuyer*paired`, `endbuyer*year`, `authorstyle*portrait`, `Interm*lrgfont`, `paired*lrgfont`, `paired*subject`, `paired*discauth`, `paired*author`, `finished*discauth`, `lrgfont*discauth`, `prevcoll*dealer`, `prevcoll*school_pntg`, and `prevcoll*Interm`.
+b. The interactions we used include: `dealer*Interm`, `dealer*paired`, `dealer*artistliving`, `dealer*diff_origin`, `artistliving*endbuyer`, `artistliving*finished`, `artistliving*year`, `diff_origin*Surface`, `diff_origin*portrait`, `diff_origin*still_life`, `diff_origin*prevcoll` `endbuyer*Surface`, `endbuyer*paired`, `endbuyer*year`, `authorstyle*portrait`, `Interm*lrgfont`, `paired*lrgfont`, `paired*subject`, `paired*discauth`, `paired*author`, `finished*discauth`, `lrgfont*discauth`, `prevcoll*dealer`, and `prevcoll*Interm`.
 
-c. Partial Explnations:
+c. Partial Explanations:
 
 * dealer: the type of dealer that the auction went through significantly affects the price of the painting. For example, compared with dealer J, the average price from dealer L is `179% higher`. (Same interpretation for dealer P and R, with different coefficients)
 
@@ -419,7 +422,14 @@ Since we are still using the linear regression model, we used `predict` function
 
 ### Model evaluation: must include an evaluation discussion
 
+The final model that is specified has generally good performance and characteristics. There are three outliers in the residuals versus fitted values plot, though the plot otherwise appears to indicate that the model meets the homoskedasticity assumption,  
+- magnitude of coefficients and standard errors
+- avPlots - not very helpful because so many categorical/indicdator variables
+
+There are three points with Cook's distance of 1 (points 423, 1129, 1351). It is unclear if they are influential at this time. 
+
 ### Model testing : must include a discussion
+- metrics from test set
 
 ### Model result: must include a selection and discussion of the top 10 valued  paintings in the validation data.
 
