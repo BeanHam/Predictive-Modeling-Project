@@ -492,7 +492,7 @@ c. Poisson&Negative Binomial Regression
 The nature of auction price is integer. Even though not strictly count data, but could be treated in such way so that we can use poisson&negative binomial regression. We trained the tested the poisson model first. With all the vairiables included (even with all the interactionss), the residual deviance is 100 times higher than the residual degrees of freedom. We concluded that the poisson model s not appropriate and proceeded with negative binomial model. The RMSE is not better than the linear model is part I (even with all the interactions) and there is still the problem of over-dispersion. 
 
 d. Xgboost
-## Added some description here
+Similarly to in section (b) above, as a result of the large number of potential interactions and categorical variables present in this model, a tree-based approach seemed like it might be a good approach. The xgboost package (Extreme Gradient Boost) has garnered a lot of attention for its good predictive performance, so this was implemented and we attempted to tune the model by alterating the allowed depth of trees, as well as the regularization penalties. Ultimately, this method proved to be nearly as accurate as the linear model, but with significantly higher biase. It was therefore not selected as the final model for this problem.
 
 Comparing all the models we fitted above, we conclude that the linear model has the best performance in terms of predicting (lowest rmse). The linear model was relatively more complex than the one in part I, resuting in some loss in predictability. However, it is still more interpretable than tree-based models. Therefore, we concluded that the best model is the linear model.
 
