@@ -29,7 +29,6 @@ load("paintings_train.Rdata")
 load("paintings_test.Rdata")
 ```
 
-
 ## Manually Data Cleaning
 
 ```{r, echo=FALSE}
@@ -270,6 +269,7 @@ ols.2 = lm(logprice ~ Shape + school_pntg
            data = ols.train)
 ```
 
+
 ## Modification
 ```{r}
 ols.2 = lm(logprice ~ Shape + school_pntg
@@ -285,7 +285,12 @@ ols.2 = lm(logprice ~ Shape + school_pntg
            + prevcoll*dealer + prevcoll*school_pntg + prevcoll*Interm
              ,data = paintings_train_2)
 
-summary(ols.2)$r.squared
+summary(ols.2)
+plot(ols.2)
+PI = data.frame(exp(predict(ols.2, 
+                 newdata=paintings_test_2, 
+                 interval = "pred")))
+
 
 predictions = as.data.frame(
   exp(predict(ols.2, newdata=paintings_test_2, type = "response")))
@@ -293,6 +298,41 @@ colnames(predictions) = "fit"
 save(predictions, file="predict-test.Rdata")
 
 ```
+
+## 4.  Development of the final model
+
+* Final model: must include a summary table
+
+* Variables: must include an explanation
+
+
+* Variable selection/shrinkage:
+
+a. Linear Model
+
+The linear model from part I does a fairly good job in predicting. Therefore, after adding two more variables in the dataset, we decided to refine the linear model first. The plan was to add new features and interactions into the model, hoping to potentially explain more variation in the response variable. Similar as the process in part I, we applied BMA (Bayesian Model Averaging) to select the base variables that have high posterior probabilities and include them in the initial model. Then we tested all possible interactions and used AIC to select interactions that are good for predicting. However, the output from AIC contain too many interactions, which might lead to the problem of overfitting. Additionally, it contains some interactions with coefficients as NA, and some that do not make sense at all. Therefore I manually removed them and kept twisting around the rest features, which led to the best final linear model in terms of the lowest RMSE.
+
+b. Tree Model
+
+Since we have many categorical variables, as in nature, a tree-based model would be appropriate in addressing the interactions to explain the response variable. We tested two tree models: random forest and boosting (bagging does not work in our case as we have 39 variables, which is beyond the limit of possible selection candidates at each node). As for random forest, we used $mtry = 13$ as this is a regression problem. For boosting, we used 5000 trees and tried different interaction depth (4, 6, 8, 10). Both methods do better job than the linear model from part I, but not as good as the linear model generated above. 
+
+c. Poisson&Negative Binomial Regression
+
+The nature of auction price is integer. Even though not strictly count data, but could be treated in such way so that we can use poisson&negative binomial regression. We trained the tested the poisson model first. With all the vairiables included (even with all the interactionss), the residual deviance is 100 times higher than the residual degrees of freedom. We concluded that the poisson model s not appropriate and proceeded with negative binomial model. The RMSE is not better than the linear model is part I (even with all the interactions) and there is still the problem of over-dispersion. 
+
+d. Xgboost
+
+
+Comparing all the models we fitted above, we conclude that the linear model has the best performance in terms of predicting (lowest rmse). The linear model was relatively more complex than the one in part I, resuting in some loss in predictability. However, it is still more interpretable than tree-based models. Therefore, we concluded that the best model is the linear model.
+
+
+* Residual: must include a residual plot and a discussion
+The residual plot looks fairly good. There seems to have a pattern that the variance is slightly higher with fitted value around 5 and a little lower at the two tails. But in general, the constant vairance assumption is satisfied. The normality assumption is well satisfied from normal qq-plot, with several observations slightly scattered away on the two sides. 
+
+
+* discussion of how prediction intervals obtained
+
+Since we are still using the linear regression model, we used `predict` function with `interval = "pred"` argument to obtain the prediction interval. 
 
 
 ## Negative Binomial
@@ -334,7 +374,7 @@ save(predictions, file="predict-test.Rdata")
 library(gbm)
 boosting = gbm(logprice ~.,
                data = paintings_train_2,
-               distribution = "gaussian",
+               distribution = "uniform",
                n.trees = 5000,
                interaction.depth = 6)
 
