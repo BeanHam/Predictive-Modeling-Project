@@ -556,4 +556,28 @@ According to our model, the most valuable ten paintings in the validation set ar
 It is interesting that, the most expensive five paintings predicted all come from the same author Nicolaes Berchem Pieterszoon. This phenomenon further confirms the consistency of the final model in terms of predicting, because usually paintings from those artists who tend to have highly valued pieces of arts in auctions would all be pricy, and it is common for the same dealer and endbuyer to purchase paintings from the same artist, and the features of the artists' paintings are similar.
 
 
-## 6. Conclusion (10 points): must include a summary of results and a discussion of things learned. Optional what would you do if you had more time.
+## 6. Conclusion
+
+```{r, echo = FALSE}
+compare_stats = data.frame(
+  In_Samp_Multiple_R2 = c(0.63, 0.6901),
+  In_Samp_Adjested_R2 = c(0.6129, 0.6634),
+  RMSE = c(1502.99, 1219.52),
+  Coverage = c(0.9506667, 0.9587)
+)
+rownames(compare_stats) = c("Part 1 model", "Part 2 model")
+kable(compare_stats)
+```
+
+Even though we ended up using linear models for both part 1 and part 2, we do notice that all four metrics, in sample multiple R-squared, in sample adjested r squared, RMSE and coverage, have all improved from the preliminary model.
+
+The main improvements and adjustment we made to reach this result included deeper data cleaning, more careful detection and manipulation for outliers and influential points, as well as reasonable manual adjustment to predictor selection. Through the data exploration and cleaning, and modeling selection and testing process, we've learned a few new things through working with a real life data analysis example:
+- In real-life data analyses, we don't always get access to nicely formatted, clean data without any missingness. Therefore, when encountered such datasets, a deep and careful data cleaning process is important before moving on to further modeling and testing steps. In terms of properly treating missing data, simply deleting the observations with missing data might cause lost of valuable information, thus approriate data imputation is also important. Once modified to a cleaner, complete dataset, the later modeling results would turn out to be more precise, less computationally costly, with the maximum amount of available information for model training.
+- Ideally, we are able to find a model that is both the closest to the true model and has the best prediction performance. However, in real-life studies, this is not always the case. When deciding which variables to include in the final models, it is important to consider the questions of interest and determine if we want the true model or one with more precise predictions.
+- Based on our experience with this case, we learned that, even though advanced models like tree/forest methods, negative binomial, xgboost and etc., they aren't necessarily as efficient and well-performing as simple linear models.
+- Even though the auto selection methods have offered us with models selected based on certain metrics (e.g AIC, BIC), not all predictors and interactions should be included for interpretability and simplicity reasons, especially for a linear model. The ultimate purpose of the studies is not only to fit the best model, but also to draw conclusions and make inferences for a real-life scenario, and potentially serving other studies, whose researchers don't necessarily have statistical background.
+
+As far as the questions of interest of this particular study is concerned, we've learned that the auction price of a painting is not solely dependent on the artistic qualities of the painting itself. It also heavily depends on other factors involved in the auction process. For example, which types of endbuyers are intrigued by the painting, or which dealer the painting is auctioned from, can also significantly impact the final auction price.
+Even though most paintings with certain characteristics like large surface area end up with an auction price on the higher end, some paintings with exceptionally large area can be valued a lot less than expected, which ended up being an outlier. Therefore, it is crucial for historians to consider all features of a painting and decide how much each factor should be weighted when predicting the price.
+```
+
