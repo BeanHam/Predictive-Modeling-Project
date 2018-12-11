@@ -289,7 +289,7 @@ ols.2 = lm(logprice ~ Shape + school_pntg
            + paired*lrgfont + paired*subject + paired*discauth + paired*author
            + finished*discauth
            + lrgfont*discauth
-           + prevcoll*dealer + prevcoll*school_pntg + prevcoll*Interm
+           + prevcoll*dealer + prevcoll*Interm
              ,data = paintings_train_2)
 
 summary(ols.2)$r.squared
@@ -328,7 +328,8 @@ rf.test = paintings_test_2 %>% dplyr::select(-logprice)
 rf = randomForest(logprice ~ .,
                   data = rf.train,
                   importance = TRUE,
-                  mtry = round(sqrt(ncol(rf.train) -1), digits = 0))
+                  mtry = round(sqrt(ncol(rf.train) -1), digits = 0),
+                  maxnodes = 5)
 
 
 predictions = as.data.frame(
@@ -339,15 +340,19 @@ save(predictions, file="predict-test.Rdata")
 ```
 
 ## boosting
-```{r}
+```{r boost}
 library(xgboost)
 
 xg.train = sparse.model.matrix(logprice ~ ., data = paintings_train_2)[,-1]
 xg.response = paintings_train_2[,"logprice"]
 boost = xgboost::xgboost(data = xg.train,
                          label = xg.response,
+                         params = list(max_depth = 5, 
+                                       gamma = 10, # threshold for split
+                                       lambda = 0.01, 
+                                       lambda_bias = 0.001),
                          objective = "reg:linear",
-                         nrounds = 10,
+                         nrounds = 20,
                          nthread = 2)
 
 xg.test = sparse.model.matrix(~ ., data = paintings_test_2[,-1])[,-1]
@@ -359,3 +364,4 @@ predictions = as.data.frame(
               type = "response")))
 colnames(predictions) = "fit"
 save(predictions, file="predict-test.Rdata")
+```
