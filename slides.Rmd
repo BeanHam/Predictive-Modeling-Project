@@ -334,4 +334,12 @@ ggplot2::ggplot(data = coef_table[2:10,], mapping = ggplot2::aes(x = names, y = 
 - Extremely large surface are doesn't mean high price;
 - This painting is an example of highly priced paintings:
 
+## Artist
+![Nicolaes Berchem Pieterszoon](Pieterszon.png)
+
+## Painting 1
+![Pieterszoon's Painting](expensive_predicted.png)
+
+## Painting 2
+![Pricey Painting](expensive_painting.png)
 
