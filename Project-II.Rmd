@@ -399,7 +399,7 @@ PI = data.frame(exp(predict(ols.2,
 ```
 
 ## Predict With Test Set
-```{r}
+```{r, echo=FALSE}
 predictions = as.data.frame(
   exp(predict(ols.2, 
               newdata=paintings_test_2, 
@@ -408,8 +408,18 @@ predictions = as.data.frame(
 save(predictions, file="predict-test.Rdata")
 ```
 
+## Predict With Validation Set
+```{r, echo=FALSE}
+predictions = as.data.frame(
+  exp(predict(ols.2, 
+              newdata= paintings_valid_2, 
+              interval = "pred")))
+
+save(predictions, file="predict-validation.Rdata")
+```
+
 ## Negative Binomial
-```{r}
+```{r, eval=FALSE}
 library(MASS)
 nb.train = paintings_train_2 %>% dplyr::select(-logprice)
 nb.test = paintings_test_2 %>% dplyr::select(-logprice, -price)
@@ -425,7 +435,7 @@ save(predictions, file="predict-test.Rdata")
 
 
 ## RF
-```{r}
+```{r, eval=FALSE}
 library(randomForest)
 
 rf.train = paintings_train_2
