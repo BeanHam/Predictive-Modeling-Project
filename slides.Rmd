@@ -182,7 +182,7 @@ kable(subject[2:4, ])
 
 - BMA: used BPM in BMA to choose base variables that have higher posterior density and good for prediction.
 - AIC: generated all possible interactions and applied AIC to choose important features.
-- Final model: 19 base vairables; 24 interactions;
+- Final model: 19 base variables; 24 interactions.
 
 
 ## Important Features
@@ -300,16 +300,12 @@ ols.2.ci =  confint(ols.2)
 coef_table = data.frame(names = rownames(ols.2.ci), 
                         coef = coef(ols.2), 
                         lower = ols.2.ci[,1], 
-                        upper = ols.2.ci[,2])[-1,] %>%
-            filter(!(upper>0 & lower<0)) %>%
-            arrange(desc(abs(coef)))
+                        upper = ols.2.ci[,2],
+                        p_val = summary(ols.2)$coefficients[,4])[-1,] %>%
+            filter(p_val < 0.05) %>%
+            arrange(p_val) 
 
-# barplot(coef_table[2:11,2], names.arg = coef_table[2:11,1], 
-#         cex.names = 0.8, cex.lab = 0.8,
-#         horiz = TRUE, las = 1)
-
-
-ggplot2::ggplot(data = coef_table[2:10,], mapping = ggplot2::aes(x = names, y = coef)) + 
+ggplot2::ggplot(data = coef_table[1:10,], mapping = ggplot2::aes(x = names, y = coef)) + 
   ggplot2::geom_bar(stat = "identity") +
   coord_flip() +
   xlab("covariate") +
@@ -328,20 +324,19 @@ plot(ols.2)
 
 ```
 
-## Interesting Finding
-- The most expensive five paintings predicted from the validation set all come from the same artist: Nicolaes Pieterszoon Berchem;
-- Most of the more expensive paintings are auctioned from the dealer with initial "R";
-- The endbuyer of these expensive paintings are, instead of a buyer or a dealer who may serve as an intermediary, collectors themselves;
-- Extremely large surface are doesn't mean high price;
-- This painting is an example of highly priced paintings:
+## Interesting Findings
+- The most expensive five paintings predicted from the validation set all come from the same artist: Nicolaes Pieterszoon Berghem.
+- Most of the more expensive paintings are auctioned from the dealer with initial "R".
+- The endbuyer of these expensive paintings are, instead of a buyer or a dealer who may serve as an intermediary, collectors themselves.
+- Extremely large surface are doesn't always mean high price.
 
-## Artist
-![Nicolaes Berchem Pieterszoon](images/Pieterszon.png)
+## The Artist
+![Nicolaes Berghem Pieterszoon](images/Pieterszon.png)
 
-## Painting 1
+## Painting 1: Pieterszoon Berghem
 ![Pieterszoon's Painting](images/expensive_predicted.png)
 
-## Painting 2
+## Painting 2: Pricey
 ![Pricey Painting](images/expensive_painting.png)
 
 ## Image Sources
