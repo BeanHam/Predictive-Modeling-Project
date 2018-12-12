@@ -497,17 +497,18 @@ d. Xgboost
 
 Similarly to in section (b) above, as a result of the large number of potential interactions and categorical variables present in this model, a tree-based approach seemed like it might be a good approach. The xgboost package (Extreme Gradient Boost) has garnered a lot of attention for its good predictive performance, so this was implemented and we attempted to tune the model by alterating the allowed depth of trees (tried 4, 5, and 6), as well as the regularization penalties. Ultimately, this method proved to be nearly as accurate as the linear model, but with significantly higher bias. It was therefore not selected as the final model for this problem.
 
-Comparing all the models that were fitted above, it was concluded that the linear model had the best performance in terms of prediction (lowest RMSE both in and out-of-sample in almost all cases), and unbiasedness (lowest bias out of all fitted models by nearly a factor of 2). The linear model was relatively more complex than the linear model fit in part I, resuting in some loss of interpretability (e.g. via interactions that aid in prediction, but are difficult to meaningfully interpret). However, it is still more interpretable than tree-based models, particularly because it includes predictors without interactions. Therefore, we concluded that the best model was the linear model.
+Comparing all the models that were fitted above, it was concluded that the linear model had the best performance in terms of prediction (lowest RMSE both in and out-of-sample in almost all cases), and unbiasedness (lowest bias out of all fitted models by nearly a factor of 2). The linear model was relatively more complex than the linear model fit in part I, resuting in some loss of interpretability (e.g. via interactions that aid in prediction, but are difficult to meaningfully interpret). However, it is still more interpretable than tree-based models, particularly because it includes predictors both with and without interactions. Therefore, we concluded that the best model was the linear model.
 
-### Residual: must include a residual plot and a discussion
-The residual plot looks fairly good. There seems to have a pattern that the variance is slightly higher with fitted value around 5 and a little lower at the two tails. But in general, the constant vairance assumption is satisfied. The normality assumption is well satisfied from normal qq-plot, with several observations slightly scattered away on the two sides. 
+### Residuals
+
+The final model that is specified has generally good in-sample performance and characteristics. There are three outliers in the residuals versus fitted values plot, though the plot otherwise appears to indicate that the model meets the homoskedasticity assumption. The residuals also appear to meet the normality assumption, based upon a visual inspection of the Normal Q-Q plot. Though there is some slight deviation in the tails, there does not appear to be any extreme variability or overall pattern to the residuals that would indicate an underlying distribution other than the normal.
 
 ```{r, echo = FALSE, warning=FALSE, message=FALSE}
 par(mfrow = c(2,2))
 plot(ols.2)
 ```
 
-### discussion of how prediction intervals obtained
+### Prediction Intervals for Out-of-Sample Data
 ```{r, echo = FALSE, message=FALSE, warning=FALSE}
 PI = data.frame(exp(predict(ols.2, 
                  newdata=paintings_test_2[1:20, ], 
@@ -515,13 +516,13 @@ PI = data.frame(exp(predict(ols.2,
 kable(PI, digits = 3, align = "c", caption = "Prediction Interval")
 ```
 
-Since we are still using the linear regression model, we used `predict` function with `interval = "pred"` argument to obtain the prediction interval. In the table above, we just showed the prediction interval for the first 20 observations.
+Since we are still using the linear regression model, we used `predict` function with `interval = "pred"` argument to obtain the prediction interval. In the table above, the prediction intervals for the first 20 out-of-sample observations are displayed for the sake of space.
 
 ## 5. Assessment of the final model
 
-### Model evaluation: must include an evaluation discussion
+### Model evaluation
 
-The final model that is specified has generally good performance and characteristics. There are three outliers in the residuals versus fitted values plot, though the plot otherwise appears to indicate that the model meets the homoskedasticity assumption. The residuals also appear to meet the normality assumption, based upon a visual inspection of the Normal Q-Q plot. Though there is some slight deviation in the tails, there does not appear to be any extreme variability or overall pattern to the residuals that would indicate an underlying distribution other than the normal. 
+The final model appears to perform 
 
 The scale-location plot does indicate three residuals that are right at the border of being large (standardized residuals greater than or near a value of 2.0). For case 751, this is likely due to its above-average surface area of 11,880 sq. in., but its relatively low price of 90 livres (compared to an average of approximately 130 livres in the training data). A similar argument may be made for case 473. For case 81, the opposite seems to be the problem. The painting is relatively small, with a surface area of just 84.4 sq. in., but sold for approximately 13,000 livres. In these few cases, there is likely some characteristic of the painting that is not being fully captured by the predictors, though this does not appear to have an overall great affect on the performance of the model. Of concern might be that if this model were used to value a painting with similar characteristics, we may undervalue it. 
 
