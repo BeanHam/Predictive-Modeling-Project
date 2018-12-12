@@ -312,8 +312,8 @@ coef_table = data.frame(names = rownames(ols.2.ci),
 ggplot2::ggplot(data = coef_table[2:10,], mapping = ggplot2::aes(x = names, y = coef)) + 
   ggplot2::geom_bar(stat = "identity") +
   coord_flip() +
-  xlab("value") +
-  ylab("covariate") + 
+  xlab("covariate") +
+  ylab("value") + 
   ggtitle("Important Covariates")
 
 
@@ -335,19 +335,17 @@ plot(ols.2)
 - Extremely large surface are doesn't mean high price;
 - This painting is an example of highly priced paintings:
 
-1. https://upload.wikimedia.org/wikipedia/commons/e/e0/David_Teniers_the_Younger_-_The_Feast_of_the_Prodigal_Son.jpg)
-2. https://upload.wikimedia.org/wikipedia/commons/e/e8/Berchem%2C_Nicolaes_~_Landscape_with_Herdsmen_Gathering_Sticks%2C_early_1650s%2C_oil_on_panel%2C_private_collection%2C_New_York.jpg
-
 ## Artist
-![Nicolaes Berchem Pieterszoon](Pieterszon.png)
+![Nicolaes Berchem Pieterszoon](images/Pieterszon.png)
 
 ## Painting 1
-![Pieterszoon's Painting](expensive_predicted.png)
-
-Citation: 
-
-1. https://en.wikipedia.org/wiki/Nicolaes_Pieterszoon_Berchem#/media/File:Portrait_of_Nicolaes_Berchem_by_Jan_Stolker.jpg
+![Pieterszoon's Painting](images/expensive_predicted.png)
 
 ## Painting 2
-![Pricey Painting](expensive_painting.png)
+![Pricey Painting](images/expensive_painting.png)
+
+## Image Sources
+1. https://upload.wikimedia.org/wikipedia/commons/e/e0/David_Teniers_the_Younger_-_The_Feast_of_the_Prodigal_Son.jpg
+2. https://upload.wikimedia.org/wikipedia/commons/e/e8/Berchem%2C_Nicolaes_~_Landscape_with_Herdsmen_Gathering_Sticks%2C_early_1650s%2C_oil_on_panel%2C_private_collection%2C_New_York.jpg
+3. https://en.wikipedia.org/wiki/Nicolaes_Pieterszoon_Berchem#/media/File:Portrait_of_Nicolaes_Berchem_by_Jan_Stolker.jpg
 
