@@ -415,7 +415,7 @@ predictions = as.data.frame(
               newdata= paintings_valid_2, 
               interval = "pred")))
 
-save(predictions, file="predict-validation.Rdata")
+save(predictions, file="prediction-validation.Rdata")
 ```
 
 ## Negative Binomial
