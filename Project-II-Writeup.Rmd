@@ -522,29 +522,26 @@ Since we are still using the linear regression model, we used `predict` function
 
 ### Model evaluation
 
-The final model appears to perform 
+The final model appears to perform well relative to the model fit from part I and to the alternative methods that were detailed above. The final out-of-sample diagnostics were an RMSE value at 1210.42 and bias of 184.08. Coverage was also just above 95%, which is acceptable given that we wish to evaluate the model at a 95% confidence level.
 
 The scale-location plot does indicate three residuals that are right at the border of being large (standardized residuals greater than or near a value of 2.0). For case 751, this is likely due to its above-average surface area of 11,880 sq. in., but its relatively low price of 90 livres (compared to an average of approximately 130 livres in the training data). A similar argument may be made for case 473. For case 81, the opposite seems to be the problem. The painting is relatively small, with a surface area of just 84.4 sq. in., but sold for approximately 13,000 livres. In these few cases, there is likely some characteristic of the painting that is not being fully captured by the predictors, though this does not appear to have an overall great affect on the performance of the model. Of concern might be that if this model were used to value a painting with similar characteristics, we may undervalue it. 
 
-The residuals vs. leverage plot makes note of three cases that are potentially influential points: 423, 1129, 1351. They have a Cook's distance of one, indicating high leverage.
-
-- magnitude of coefficients and standard errors
+The residuals vs. leverage plot makes note of three cases that are potentially influential points: 423, 1129, 1351. They have a Cook's distance of one, indicating potentially high influence. The removal of these variables was considered, but a refit of the model revealed that there was not an overall large effect of these three observations on the greater model. Furthermore, eliminating them led to additional points being flagged as points of high leverage and potential influence. This exemplifies the potential for a race to the bottom as more extreme observations are removed, resulting in other observations appearing more extreme when compared to the remaining data. Overall, we did not believe that there was enough reason to warrant eliminating any observations from the training data.
 
 The model was further evaluated using added variable plots to understand each predictor's contribution to the model, and whether any transformations may be worth exploring. However, this process was not very helpful because the model includes so many categoricals variables, and so few numeric continuous variables. There was no indication from visual inspection of the avPlots that transformations of the numeric predictors would have yielded improved model fit. 
 
+Finally, the magnitude of coefficients relative to their standard errors was considered when evaluating the model. This relationship is well-documented by the value of the t-test statistic. While many coefficients were not found to have p-values that fell below our alpha-level of 0.05, these values may still aid in prediction. Furthermore, many correspond to the different levels of a particular categorical variable. While some levels of the variable may not have been found to have a coefficient that is statistically significantly different than 0 at the 95% level of confidence, other levels of the same variable may have such a result. So the variable is overall important to the model, and eliminating it or recoding its levels post-hoc would eliminate information and may even introduce additional and unwarranted bias to the model. 
 
-### Model testing : must include a discussion
-- metrics from test set
-- potential improvelemnts  - k-fold cross validation due to uncertainty in makeup of test set. different test/validation sets may yield different model results
+### Model testing
 
-After selecting the final model and predicting with the test dataset, we looked at a couple of metrics to evaluate the performance of the model. The two most important evaluations of the model are its rmse value, which represents the goodness of fit of the model, and its bias, which measures the tendency for the model to systematically over- or underestimate.
+After selecting the final model and predicting with the test dataset, we evaluated several metrics to evaluate the performance of the model. The two most important evaluations of the model when comparing it to other candidates were its out-of-sample RMSE value, which represents the predictive performance of the model, and its bias, which measures the tendency for the model to systematically over- or underestimate (i.e. the model the captures the true data-generating process would have zero bias).
 
-In terms of the final model that we fit, we have the rmse value at 1210.42 and bias at 184.08. Since the method that we end up using is a linear model, whose ultimately purpose and model selection criteria is not to miniimize the rmse value, the rmse value that we end up with, although is not the best, is reasonaly good. Also, since we used stepwise AIC as the model selection criteria, it gives us a model that has better performance at predicting (comparing to BIC who leads to a model closer to the "true model"), the resulting model would have a higher rmse value than if we were to choose a different cirteria.
+In terms of the final model that we fit, we observed out-of-sample RMSE of 1210.42 and bias at 184.08. Since the method that we end up using is a linear model, this is superior to our initial linear model and on par with results obtained using other methods discussed in section 4. The use of stepwise AIC as the model selection criteria has the goal result of a model that has better predictive performance (compared to BIC, which seeks the "true model"). Coverage was also calculated and found to be just above 95%, which was a slight improvement over the initial model and on par with our expectations for how an acceptable model would perform. Of note is that, given a different test set, it is possible that these results could be alterated. This is one potential downfall of the train-test set setup that was utilized here, and a method like k-fold cross validation with a witheld validation set would likely yield less variable results in this regard.
 
-Lastly, since we aim at balancing the simplicity, interpretability and performance of the model, as well as the tidyness of the , certain levels of categorical variables are merged and interactions were removed from the model, even though the stepwise function suggested to include them. This could also negatively affect the rmse and bias of the final selected model, but would also add up the difficulty of using and understanding the model, thus we chose to slightly sacrifise the precision.
+Lastly, since we aim at balancing the simplicity, interpretability and performance of the model, certain levels of categorical variables were recoded and not all interactions were included in the model, even though the stepwise AIC process may have suggested their inclusion. This could also negatively impact the RMSE and bias of the final model, but would also add complexity and the potential for overfitting the training data.
 
 
-### Model result:
+### Model result
 
 ```{r message=FALSE, warning=FALSE, echo = FALSE}
 valid_pred = predictions = as.data.frame(
@@ -553,34 +550,52 @@ valid_pred = predictions = as.data.frame(
 colnames(valid_pred) = c("prediction")
 top_10 = data.frame(price = valid_pred$prediction, rownum = rownames(paintings_validation))
 
-kable(top_10 %>% arrange(desc(price)) %>% slice(1:10), digits = 1, align = "c")
+kable(top_10 %>% arrange(desc(price)) %>% top_n(n=10), digits = 1, align = "c")
 ```
 
-According to our model, the most valuable ten paintings in the validation set are, from most expensive to the tenth expensive, marked with row number 2065, 2066, 2543, 1071, 2538, 2584, 2517, 2477, 2022 and 2528. All of these paintings tend to share similar characteristics like their shape, dealer, school, endbuyer, whether they are paired or not, whether they are engraved or not and etc. Most of these shared features and the level/status these 10 paintings are at, after taking into account the related interaction terms, lead to a positive correlation with the price. Therefore, the model ended up predicting high prices for these paintings.
-It is interesting that, the most expensive five paintings predicted all come from the same author Nicolaes Berchem Pieterszoon. This phenomenon further confirms the consistency of the final model in terms of predicting, because usually paintings from those artists who tend to have highly valued pieces of arts in auctions would all be pricy, and it is common for the same dealer and endbuyer to purchase paintings from the same artist, and the features of the artists' paintings are similar.
+According to our model, the most valuable ten paintings in the validation set are, from most expensive to the tenth expensive, marked with row number 2065, 2066, 2543, 1071, 2538, 2584, 2517, 2477, 2022 and 2528. All of these paintings tend to share similar characteristics like their shape, dealer, school, endbuyer, whether they are paired or not, whether they are engraved or not and etc. Most notably, five of the top ten paintings have the same artist (author), Berghem. Unsurprisingly, in the model, all else equal, a painting by Berghem is associated with a price increase of 179% relative to artist la Fosse, who does not appear in the top ten here. Most of the other shared features of these 10 paintings, after taking into account the related interaction terms, had a positive association with the price. Therefore, the model ended up predicting high prices for these paintings.
 
 
 ## 6. Conclusion
 
 ```{r, echo = FALSE}
 compare_stats = data.frame(
-  In_Samp_Multiple_R2 = c(0.63, 0.6901),
-  In_Samp_Adjested_R2 = c(0.6129, 0.6634),
+  Adj_R2 = c(0.6129, 0.6634),
   RMSE = c(1502.99, 1219.52),
   Coverage = c(0.9506667, 0.9587)
 )
-rownames(compare_stats) = c("Part 1 model", "Part 2 model")
+rownames(compare_stats) = c("Part I Model", "Part II Model")
 kable(compare_stats)
 ```
 
-Even though we ended up using linear models for both part 1 and part 2, we do notice that all four metrics, in sample multiple R-squared, in sample adjested r squared, RMSE and coverage, have all improved from the preliminary model.
+Even though we ended up using linear models for both parts I and II, we do notice that in sample adjusted R-squared, RMSE and coverage, have all improved from the preliminary model.
 
-The main improvements and adjustment we made to reach this result included deeper data cleaning, more careful detection and manipulation for outliers and influential points, as well as reasonable manual adjustment to predictor selection. Through the data exploration and cleaning, and modeling selection and testing process, we've learned a few new things through working with a real life data analysis example:
-- In real-life data analyses, we don't always get access to nicely formatted, clean data without any missingness. Therefore, when encountered such datasets, a deep and careful data cleaning process is important before moving on to further modeling and testing steps. In terms of properly treating missing data, simply deleting the observations with missing data might cause lost of valuable information, thus approriate data imputation is also important. Once modified to a cleaner, complete dataset, the later modeling results would turn out to be more precise, less computationally costly, with the maximum amount of available information for model training.
-- Ideally, we are able to find a model that is both the closest to the true model and has the best prediction performance. However, in real-life studies, this is not always the case. When deciding which variables to include in the final models, it is important to consider the questions of interest and determine if we want the true model or one with more precise predictions.
-- Based on our experience with this case, we learned that, even though advanced models like tree/forest methods, negative binomial, xgboost and etc., they aren't necessarily as efficient and well-performing as simple linear models.
-- Even though the auto selection methods have offered us with models selected based on certain metrics (e.g AIC, BIC), not all predictors and interactions should be included for interpretability and simplicity reasons, especially for a linear model. The ultimate purpose of the studies is not only to fit the best model, but also to draw conclusions and make inferences for a real-life scenario, and potentially serving other studies, whose researchers don't necessarily have statistical background.
+The changes made to reach this result included deeper data cleaning, more careful attention paid to potential outliers, as well as reasonable manual adjustments to predictor selection. Through the data exploration and cleaning, model selection, and testing process, several important lessons have been learned:
+- In realistic data analysis problems, we rarely get access to nicely formatted, clean data without any missingness. Therefore, when encountered such data sets, a deep and careful data cleaning process is important before moving on to further modeling and testing steps. In terms of properly treating missing data, simply deleting the observations with missing data might cause lost of valuable information, thus approriate data imputation is also important. Once modified to a cleaner, complete dataset, the later modeling results would turn out to be more precise, less computationally costly, with the maximum amount of available information for model training.
+- Ideally, we are able to find a model that is both the closest to the true model and has the best prediction performance. However, in this case, we had to choose to balance interpretability with predictive performance in seeking the best model for our intended audience.
+- More advanced models like tree/forest methods, xgboost and etcetera, aren't always preferable to ordinary linear models.
+- Even though the auto selection methods provided candidate models selected based on certain metrics (e.g AIC, BIC), not all predictors and interactions should always be included for reasons of interpretability, simplicity, and potential for overfitting. The ultimate purpose of the studies is not only to fit the best model, but also to draw conclusions and make inferences for a real-life scenario, and potentially serving other studies, whose researchers don't necessarily have statistical background.
 
-As far as the questions of interest of this particular study is concerned, we've learned that the auction price of a painting is not solely dependent on the artistic qualities of the painting itself. It also heavily depends on other factors involved in the auction process. For example, which types of endbuyers are intrigued by the painting, or which dealer the painting is auctioned from, can also significantly impact the final auction price.
-Even though most paintings with certain characteristics like large surface area end up with an auction price on the higher end, some paintings with exceptionally large area can be valued a lot less than expected, which ended up being an outlier. Therefore, it is crucial for historians to consider all features of a painting and decide how much each factor should be weighted when predicting the price.
+As far as the questions of interest of this particular study is concerned, we've learned that the auction price of a painting is not solely dependent on the immediately observable qualities of the painting itself. It also heavily depends on other factors involved in the auction process. For example, which types of endbuyers are intrigued by the painting, or which dealer the painting is auctioned from, can also significantly impact the final auction price.
+
+```{r}
+ols.2.ci =  confint(ols.2)
+coef_table = data.frame(names = rownames(ols.2.ci), 
+                        coef = coef(ols.2), 
+                        lower = ols.2.ci[,1], 
+                        upper = ols.2.ci[,2],
+                        p_val = summary(ols.2)$coefficients[,4])[-1,] %>%
+            filter(p_val < 0.05) %>%
+            arrange(p_val)
+
+ggplot2::ggplot(data = coef_table[1:10,], mapping = ggplot2::aes(x = names, y = coef)) + 
+  ggplot2::geom_bar(stat = "identity") +
+  coord_flip() +
+  xlab("covariate") +
+  ylab("value") + 
+  ggtitle("Important Covariates")
+```
+
+
+Even though most paintings with certain characteristics like large surface area end up with an auction price on the higher end, some paintings with exceptionally large area can be valued a lot less than expected, which resulted in a couple of noted outliers in this scenario. Therefore, it is crucial for historians to consider all features of a painting and decide how much each factor should be weighted when predicting the price. In particular, our analysis has found that characteristics like the dealer involved in the transaction may have large influence on the price at which a painting is sold, as can the amount of space that the dealer devotes to the description of the painting (i.e. the lrgfont variable), if the painting has a pedigree (i.e. if the previous owner is mentioned), and if it is considered highly finished by experts. These variables are summarized in the chart above. There are several other important variables, and the above summary is meant only to serve as a snapshot of a few of the most influential for an art scholar who was interested in the subject. 
 

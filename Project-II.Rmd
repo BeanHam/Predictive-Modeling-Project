@@ -564,6 +564,38 @@ The residual plot looks fairly good. There seems to have a pattern that the vari
 
 ## 5. Assessment of the final model
 
+
+```{r}
+rmse <- function(predicted, observed){
+  sqrt(sum( (predicted - observed)^2 ) / length(observed))
+}
+
+rmse(ols.2$fitted.values, paintings_train_2$logprice)
+```
+
+
+```{r}
+# refit due to cook's distance = 1  - cases 423, 1129, 1351
+
+paintings_train_2_refit = paintings_train_2[-c(423, 1129, 1351),]
+
+ols.2.refit = lm(logprice ~ Shape + school_pntg
+           + dealer*Interm + dealer*paired + dealer*artistliving + dealer*diff_origin
+           + artistliving*endbuyer + artistliving*finished + artistliving*year
+           + diff_origin*Surface + diff_origin*portrait  + diff_origin*still_life + diff_origin*prevcoll
+           + endbuyer*Surface + endbuyer*paired + endbuyer*year
+           + authorstyle*portrait
+           + Interm*lrgfont
+           + paired*lrgfont + paired*subject + paired*discauth + paired*author
+           + finished*discauth
+           + lrgfont*discauth
+           + prevcoll*dealer + prevcoll*Interm
+             ,data = paintings_train_2_refit)
+
+summary(ols.2.refit)
+plot(ols.2.refit)
+```
+
 ### Model evaluation: must include an evaluation discussion
 
 The final model that is specified has generally good performance and characteristics. There are three outliers in the residuals versus fitted values plot, though the plot otherwise appears to indicate that the model meets the homoskedasticity assumption. The residuals also appear to meet the normality assumption, based upon a visual inspection of the Normal Q-Q plot. Though there is some slight deviation in the tails, there does not appear to be any extreme variability or overall pattern to the residuals that would indicate an underlying distribution other than the normal. 
@@ -585,7 +617,7 @@ After selecting the final model and predicting with the test dataset, we looked 
 
 In terms of the final model that we fit, we have the rmse value at 1210.42 and bias at 184.08. Since the method that we end up using is a linear model, whose ultimately purpose and model selection criteria is not to miniimize the rmse value, the rmse value that we end up with, although is not the best, is reasonaly good. Also, since we used stepwise AIC as the model selection criteria, it gives us a model that has better performance at predicting (comparing to BIC who leads to a model closer to the "true model"), the resulting model would have a higher rmse value than if we were to choose a different cirteria.
 
-Lastly, since we aim at balancing the simplicity, interpretability and performance of the model, as well as the tidyness of the , certain levels of categorical variables are merged and interactions were removed from the model, even though the stepwise function suggested to include them. This could also negatively affect the rmse and bias of the final selected model, but would also add up the difficulty of using and understanding the model, thus we chose to slightly sacrifise the precision.
+Lastly, since we aim at balancing the simplicity, interpretability and performance of the model, certain levels of categorical variables are merged and interactions were removed from the model, even though the stepwise function suggested to include them. This could also negatively affect the rmse and bias of the final selected model, but would also add up the difficulty of using and understanding the model, thus we chose to slightly sacrifise the precision.
 
 ### Model Result
 According to our model, the most valuable ten paintings in the validation set are, from most expensive to the tenth expensive, marked with row number 2065, 2066, 2543, 1071, 2538, 2584, 2517, 2477, 2022 and 2528. All of these paintings tend to share similar characteristics like their shape, dealer, school, endbuyer, whether they are paired or not, whether they are engraved or not and etc. Most of these shared features and the level/status these 10 paintings are at, after taking into account the related interaction terms, lead to a positive correlation with the price. Therefore, the model ended up predicting high prices for these paintings.
