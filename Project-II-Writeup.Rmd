@@ -470,11 +470,11 @@ c. Partial Explanations:
 
 * author: which author painted the painting also has some influence on the price. Compared with author Charles de la Fosse, author David Teniers' paintings are `80.57% higher` in price on average. Author Nicolas Berghem's paintings are `181.4% higher` in price on average. 
 
-* dealer&Interm interaction: when an intermediary is present, which the price of the auctioned paintings differs significantly among different dealers. For instance, if the dealer is R and an intermediary is used, the average selling price is `107.0% higher` than when the dealer is J with an intermediary.
+* dealer:Interm interaction: when an intermediary is present, which the price of the auctioned paintings differs significantly among different dealers. For instance, if the dealer is R and an intermediary is used, the average selling price is `107.0% higher` than when the dealer is J with an intermediary. This represents a difference in slope for dealer when an intermediary is involved.
 
-* finished*discauth: given that the painting is noted for being highly finished, when the dealer engages with authenticity, the average price is expected to be `76.2% higher`.
+* finished:discauth: given that the painting is noted for being highly finished, when the dealer engages with authenticity, the average price is expected to be `76.2% higher`. This represents a difference in slope.
 
-* diff_origin:still_life: given that the origin of painting based on nationality of artist is different from the origin of painting based on dealer's classification, if the description indicates still life elements, the price is expected to be `-112.8% lower`.
+* diff_origin:still_life: given that the origin of painting based on nationality of artist is different from the origin of painting based on dealer's classification, if the description indicates still life elements, the price is expected to be `-112.8% lower`. This represents a difference in slope for diff_origin when the painting is also a still life. 
 
 
 ### Variable selection/shrinkage:
